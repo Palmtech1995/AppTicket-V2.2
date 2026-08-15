@@ -1,0 +1,10 @@
+{
+  "name": "Remix Remix Remix Xing Tai Enterprise Asset \u0026 IT Ticket System",
+  "description": "Enterprise Asset Management, IT Helpdesk Ticket, Transfer Handover System, and QR Tracking for Xing Tai Trading (Thailand) Co., Ltd.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

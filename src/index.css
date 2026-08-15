@@ -1,0 +1,9 @@
+/**
+ * ============================================================================
+ * [GLOBAL STYLING & TAILWIND V4 CONFIGURATION]
+ * File: /src/index.css
+ * Description: Global Tailwind CSS import and custom styling rules for Xing Tai
+ * ============================================================================
+ */
+
+@import "tailwindcss";
