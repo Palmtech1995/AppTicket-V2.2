@@ -308,7 +308,7 @@ export const SystemManual: React.FC = () => {
           }`}
         >
           <Globe className="w-3.5 h-3.5" />
-          <span>4. กรณีใช้งานบน WordPress (Plugin)</span>
+          <span>4. กรณีใช้งานบน WordPress & Hostinger</span>
         </button>
       </div>
 
@@ -1361,6 +1361,70 @@ MYSQL_DATABASE=xingtai_db
                 ระบบ Xing Tai สามารถใช้ฐานข้อมูล MySQL เดียวกับ WordPress ได้ โดยเพียงแค่นำเข้าตารางทั้ง 8 ตารางลงใน Database ของ WordPress ผ่าน phpMyAdmin เพื่อรวมศูนย์ข้อมูลและการสำรองข้อมูลไว้ในที่เดียว
               </p>
             </div>
+
+            {/* Method 5: Hostinger + phpMyAdmin Guide */}
+            <div className="bg-[#111420] border border-purple-800/50 rounded-2xl p-5 space-y-3 md:col-span-2 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl"></div>
+              <div className="flex items-center gap-2 relative z-10">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-lg shadow-purple-600/30">
+                  5
+                </div>
+                <h4 className="font-bold text-purple-300 text-sm flex items-center gap-2">
+                  <span>คู่มือติดตั้งฉบับสมบูรณ์สำหรับ Hostinger WordPress + phpMyAdmin</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-purple-900/60 text-purple-200 border border-purple-700/50">RECOMMENDED</span>
+                </h4>
+              </div>
+              <div className="text-xs text-zinc-300 leading-relaxed space-y-3 relative z-10">
+                <p>หากคุณใช้ <strong>Hostinger</strong> เป็นเว็บโฮสติ้งหลักและต้องการรวมระบบนี้เข้าไปใน WordPress อย่างสมบูรณ์ ให้ทำตามขั้นตอนต่อไปนี้:</p>
+                
+                <div className="bg-black/40 p-3.5 rounded-xl border border-purple-900/40 space-y-2">
+                  <strong className="text-purple-300 block border-b border-purple-900/40 pb-1.5">ส่วนที่ 1: การเตรียมฐานข้อมูลผ่าน Hostinger phpMyAdmin</strong>
+                  <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-[11px]">
+                    <li>ล็อกอินเข้าสู่ <strong>hPanel (Hostinger Control Panel)</strong></li>
+                    <li>ไปที่เมนู <strong>Databases &rarr; phpMyAdmin</strong> แล้วคลิก <strong>Enter phpMyAdmin</strong> ของฐานข้อมูลที่ใช้งานกับ WordPress ของคุณ</li>
+                    <li>ที่แถบเมนูด้านบนใน phpMyAdmin ให้คลิกที่ <strong>Import (นำเข้า)</strong></li>
+                    <li>อัปโหลดไฟล์ <code className="text-cyan-300 font-mono">xingtai_db.sql</code> (ดาวน์โหลดได้จากเมนู Admin &rarr; จัดการ MySQL) แล้วกด <strong>Go</strong></li>
+                    <li>ระบบจะสร้าง 8 ตารางใหม่ (เช่น assets, users, it_tickets) ลงในฐานข้อมูลเดียวกับ WordPress โดยไม่กระทบกับตารางเดิมที่มี Prefix ของ WP (<code className="text-zinc-500">wp_</code>)</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/40 p-3.5 rounded-xl border border-purple-900/40 space-y-2">
+                  <strong className="text-purple-300 block border-b border-purple-900/40 pb-1.5">ส่วนที่ 2: การนำไฟล์ขึ้น Hostinger ด้วย File Manager</strong>
+                  <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-[11px]">
+                    <li>รันคำสั่ง <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">npm run build</code> ในเครื่อง Local เพื่อสร้างโฟลเดอร์ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">dist</code></li>
+                    <li>ใน <strong>hPanel</strong> ไปที่เมนู <strong>Files &rarr; File Manager</strong></li>
+                    <li>เข้าไปที่โฟลเดอร์ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">public_html</code> (โฟลเดอร์หลักของ WordPress)</li>
+                    <li>สร้างโฟลเดอร์ใหม่ชื่อ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">assets-system</code></li>
+                    <li>อัปโหลดไฟล์ทั้งหมดที่อยู่ในโฟลเดอร์ <code className="text-cyan-300 font-mono">dist</code> ลงไปใน <code className="text-cyan-300 font-mono">public_html/assets-system/</code></li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/40 p-3.5 rounded-xl border border-purple-900/40 space-y-2">
+                  <strong className="text-purple-300 block border-b border-purple-900/40 pb-1.5">ส่วนที่ 3: การตั้งค่า Backend เชื่อมต่อ MySQL (PHP Gateway)</strong>
+                  <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-[11px]">
+                    <li>สร้างไฟล์ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">api.php</code> และ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">db_config.php</code> ไว้ในโฟลเดอร์ <code className="text-cyan-300 font-mono bg-zinc-900 px-1 rounded">assets-system</code></li>
+                    <li>ในไฟล์ <code className="text-cyan-300 font-mono">db_config.php</code> ให้นำข้อมูลจากไฟล์ <code className="text-amber-400 font-mono">wp-config.php</code> มาใส่ (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST)</li>
+                    <li>ระบบ Frontend ของ XingTai จะสามารถพูดคุยกับฐานข้อมูล MySQL ของ Hostinger ผ่าน API นี้ได้โดยตรง</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/40 p-3.5 rounded-xl border border-purple-900/40 space-y-2">
+                  <strong className="text-purple-300 block border-b border-purple-900/40 pb-1.5">ส่วนที่ 4: การฝังระบบลงใน WordPress (Iframe Integration)</strong>
+                  <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-[11px]">
+                    <li>เข้าสู่ระบบหลังบ้าน WordPress (wp-admin) &rarr; ไปที่ Pages &rarr; Add New</li>
+                    <li>เพิ่ม Block แบบ <strong>Custom HTML</strong> และใส่โค้ดดังนี้:</li>
+                  </ul>
+                  <pre className="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 font-mono text-[11px] text-cyan-300 overflow-x-auto leading-relaxed select-all">
+{`<iframe 
+  src="https://yourdomain.com/assets-system/" 
+  style="width:100%; height:950px; border:none; border-radius:12px;" 
+  allow="camera; clipboard-read; clipboard-write;"
+></iframe>`}
+                  </pre>
+                  <p className="text-[10px] text-zinc-500 mt-1">* เปลี่ยน <code className="text-cyan-300 font-mono">yourdomain.com</code> เป็นโดเมนจริงของคุณ</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1768,6 +1832,21 @@ MYSQL_DATABASE=xingtai_db
                   <p className="text-[11px] text-zinc-700 leading-relaxed pl-1">
                     ระบบ Xing Tai สามารถใช้ฐานข้อมูล MySQL เดียวกับ WordPress ได้ โดยเพียงแค่นำเข้าตารางทั้ง 8 ตารางลงใน Database ของ WordPress ผ่าน phpMyAdmin เพื่อรวมศูนย์ข้อมูลและการสำรองข้อมูลไว้ในที่เดียว
                   </p>
+                </div>
+
+                {/* Method 5: Hostinger + phpMyAdmin Guide */}
+                <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="font-bold text-purple-950 text-sm mb-1 flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-purple-900 text-white flex items-center justify-center text-xs">5</span>
+                    <span>วิธีที่ 5: ติดตั้งบน Hostinger WordPress + phpMyAdmin (แนะนำสำหรับ Hostinger)</span>
+                  </div>
+                  <ol className="list-decimal list-inside text-[11px] text-zinc-800 space-y-1 pl-1 leading-relaxed">
+                    <li>ไปที่ <strong>hPanel</strong> &rarr; <strong>Databases &rarr; phpMyAdmin</strong> คลิก <strong>Enter phpMyAdmin</strong> ของ WordPress DB</li>
+                    <li>ใช้แท็บ <strong>Import</strong> อัปโหลด <code className="font-mono text-purple-900 font-bold">xingtai_db.sql</code> เพื่อสร้าง 8 ตารางร่วมกับ WordPress</li>
+                    <li>รัน <code className="font-mono text-purple-900 font-bold">npm run build</code> แล้วอัปโหลดโฟลเดอร์ <code className="font-mono text-purple-900 font-bold">dist</code> ทั้งหมดไปที่ <code className="font-mono text-purple-900">public_html/assets-system</code> ผ่าน File Manager</li>
+                    <li>สร้างไฟล์ <code className="font-mono text-purple-900 font-bold">api.php</code> และ <code className="font-mono text-purple-900 font-bold">db_config.php</code> ไว้ในโฟลเดอร์ <code className="font-mono text-purple-900">assets-system</code> โดยดึงคอนฟิกจาก wp-config.php</li>
+                    <li>ใน WordPress Page ให้ฝัง Iframe ชี้ไปที่ <code className="font-mono text-purple-900 font-bold">https://yourdomain.com/assets-system/</code></li>
+                  </ol>
                 </div>
               </div>
             </div>
