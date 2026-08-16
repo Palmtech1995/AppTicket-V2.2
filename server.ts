@@ -17,6 +17,7 @@
  */
 
 import express from 'express';
+import http from 'http';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
@@ -454,6 +455,8 @@ async function initDatabaseTables() {
 
 async function startServer() {
   const app = express();
+  const httpServer = http.createServer(app);
+
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -924,7 +927,7 @@ async function startServer() {
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: process.env.DISABLE_HMR !== 'true' ? true : false,
+        hmr: process.env.DISABLE_HMR !== 'true' ? { server: httpServer } : false,
       },
       appType: 'spa',
     });
@@ -938,7 +941,7 @@ async function startServer() {
   }
 
   // Bind server
-  app.listen(PORT, HOST, () => {
+  httpServer.listen(PORT, HOST, () => {
     console.log(`🚀 Xing Tai Enterprise Server running on http://${HOST}:${PORT}`);
     // Non-blocking initial DB verification
     initDatabaseTables().catch(() => {});
