@@ -35,8 +35,46 @@ import {
   ShieldAlert,
   Globe,
 } from 'lucide-react';
-import jsQR from 'jsqr';
 import { Asset } from '../../types';
+
+// Safe dynamic loader for jsQR to prevent Vite bundle/runtime errors if package is missing
+async function decodeWithJsQR(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  options?: { inversionAttempts?: 'dontInvert' | 'onlyInvert' | 'attemptBoth' | 'invertFirst' }
+): Promise<{ data: string } | null> {
+  try {
+    let jsQRInstance = (window as any).jsQR;
+
+    if (!jsQRInstance && typeof document !== 'undefined') {
+      await new Promise<void>((resolve) => {
+        const existing = document.getElementById('jsqr-loader-script');
+        if (existing) {
+          if ((window as any).jsQR) return resolve();
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => resolve());
+          return;
+        }
+        const script = document.createElement('script');
+        script.id = 'jsqr-loader-script';
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => resolve();
+        document.head.appendChild(script);
+      });
+      jsQRInstance = (window as any).jsQR;
+    }
+
+    if (typeof jsQRInstance === 'function') {
+      return jsQRInstance(data, width, height, options || { inversionAttempts: 'dontInvert' });
+    }
+  } catch (err) {
+    console.debug('Safe jsQR decode error:', err);
+  }
+  return null;
+}
 
 interface QRScannerModalProps {
   isOpen: boolean;
@@ -111,7 +149,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   }, [assets]);
 
   // Fallback decoder using jsQR canvas scanning
-  const scanVideoFrameWithJsQR = useCallback(() => {
+  const scanVideoFrameWithJsQR = useCallback(async () => {
     if (!videoRef.current || videoRef.current.readyState !== videoRef.current.HAVE_ENOUGH_DATA) return;
     
     try {
@@ -128,7 +166,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      const code = await decodeWithJsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: 'dontInvert',
       });
 
@@ -287,7 +325,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           if (ctx) {
             ctx.drawImage(img, 0, 0);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            const code = await decodeWithJsQR(imageData.data, imageData.width, imageData.height);
             if (code && code.data) {
               handleMatchCode(code.data);
               setIsProcessingImage(false);
