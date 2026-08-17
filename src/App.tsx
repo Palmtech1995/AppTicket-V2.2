@@ -810,6 +810,7 @@ export function App() {
                 onSelectTicket={(ticket) => setSelectedTicketDetail(ticket)}
                 onNavigateToTransfers={() => setCurrentTab('transfers')}
                 onNavigateToAssets={() => setCurrentTab('assets')}
+                onNavigateToTickets={() => setCurrentTab('tickets')}
               />
             )}
 

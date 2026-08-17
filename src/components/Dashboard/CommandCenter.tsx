@@ -39,6 +39,7 @@ interface CommandCenterProps {
   onSelectTicket: (ticket: ITTicket) => void;
   onNavigateToTransfers: () => void;
   onNavigateToAssets: () => void;
+  onNavigateToTickets: () => void;
 }
 
 export const CommandCenter: React.FC<CommandCenterProps> = ({
@@ -49,6 +50,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
   onSelectTicket,
   onNavigateToTransfers,
   onNavigateToAssets,
+  onNavigateToTickets,
 }) => {
   const criticalTickets = tickets.filter((t) => t.priority === 'CRITICAL' && t.status !== 'RESOLVED' && t.status !== 'CLOSED');
   const openTickets = tickets.filter((t) => t.status !== 'RESOLVED' && t.status !== 'CLOSED');
@@ -119,12 +121,16 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Top Metric Cards matching Image 2 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Critical P0/P1 */}
-        <div className="bg-[#12141a] border border-zinc-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-red-900/60 transition-all">
+        <div
+          onClick={onNavigateToTickets}
+          className="bg-[#12141a] border border-zinc-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-red-900/60 hover:bg-[#161822] cursor-pointer transition-all"
+          title="คลิกเพื่อไปหน้าจัดการ IT Ticket (เคสวิกฤต)"
+        >
           <div className="flex items-center justify-between text-zinc-400 mb-3">
             <span className="text-xs font-mono tracking-wider uppercase text-red-400 font-semibold flex items-center gap-1.5">
               CRITICAL P0 / P1
             </span>
-            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <AlertTriangle className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-extrabold text-white font-mono">{criticalTickets.length}</span>
@@ -132,25 +138,31 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
               {criticalTickets.length > 0 ? 'Urgent Response Required' : 'All systems nominal'}
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400 mt-2">
-            ต้องเร่งแก้ไขทันที กระทบระบบงานสาขาหลัก
+          <p className="text-[11px] text-zinc-400 mt-2 flex items-center justify-between">
+            <span>ต้องเร่งแก้ไขทันที กระทบระบบงานสาขาหลัก</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
         {/* Card 2: Total Open */}
-        <div className="bg-[#12141a] border border-zinc-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-zinc-700 transition-all">
+        <div
+          onClick={onNavigateToTickets}
+          className="bg-[#12141a] border border-zinc-800/80 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-cyan-900/60 hover:bg-[#161822] cursor-pointer transition-all"
+          title="คลิกเพื่อไปหน้าจัดการ IT Ticket ทั้งหมด"
+        >
           <div className="flex items-center justify-between text-zinc-400 mb-3">
             <span className="text-xs font-mono tracking-wider uppercase text-zinc-300 font-semibold">
               TOTAL OPEN TICKETS
             </span>
-            <Layers className="w-4 h-4 text-zinc-400" />
+            <Layers className="w-4 h-4 text-zinc-400 group-hover:scale-110 transition-transform" />
           </div>
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-extrabold text-white font-mono">{openTickets.length}</span>
             <span className="text-xs text-zinc-400 font-mono">Active Queue</span>
           </div>
-          <p className="text-[11px] text-zinc-400 mt-2">
-            คิวงานแจ้งซ่อม IT และคำร้องที่อยู่ระหว่างดำเนินการ
+          <p className="text-[11px] text-zinc-400 mt-2 flex items-center justify-between">
+            <span>คิวงานแจ้งซ่อม IT และคำร้องที่อยู่ระหว่างดำเนินการ</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
@@ -237,9 +249,14 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
               <h2 className="text-sm font-bold text-white">Technician Workload</h2>
               <p className="text-xs text-zinc-400">Real-time resource allocation and efficiency metrics.</p>
             </div>
-            <span className="text-xs text-zinc-400 hover:text-zinc-200 cursor-pointer flex items-center gap-1 font-mono">
-              View All <ArrowUpRight className="w-3.5 h-3.5" />
-            </span>
+            <button
+              onClick={onNavigateToTickets}
+              className="text-xs text-zinc-400 hover:text-white hover:bg-zinc-800/80 px-2.5 py-1 rounded-lg cursor-pointer flex items-center gap-1 font-mono transition-all group"
+              title="เปิดหน้าจัดการ IT Ticket ทั้งหมด"
+            >
+              <span>View All</span>
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform text-cyan-400" />
+            </button>
           </div>
 
           <div className="space-y-4">
