@@ -98,7 +98,15 @@ export const GoogleSheetsSyncModal: React.FC<GoogleSheetsSyncModalProps> = ({
         setToken(res.accessToken);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to authenticate with Google');
+      if (
+        err?.code === 'auth/popup-closed-by-user' ||
+        err?.code === 'auth/cancelled-popup-request' ||
+        err?.message?.includes('popup-closed-by-user')
+      ) {
+        // User closed the popup intentionally
+        return;
+      }
+      setErrorMessage(err.message || 'ไม่สามารถลงชื่อเข้าใช้ด้วย Google ได้ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsLoggingIn(false);
     }

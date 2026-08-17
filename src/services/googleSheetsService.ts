@@ -64,6 +64,24 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     cachedAccessToken = credential.accessToken;
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
+    const errCode = error?.code || '';
+    const errMsg = error?.message || '';
+
+    // Gracefully handle user cancellation or closing popup window
+    if (
+      errCode === 'auth/popup-closed-by-user' ||
+      errCode === 'auth/cancelled-popup-request' ||
+      errMsg.includes('popup-closed-by-user') ||
+      errMsg.includes('cancelled-popup-request')
+    ) {
+      console.warn('Google Sign-In popup was closed or cancelled by user.');
+      return null;
+    }
+
+    if (errCode === 'auth/popup-blocked' || errMsg.includes('popup-blocked')) {
+      throw new Error('เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป (Popup Blocked) กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่อีกครั้ง');
+    }
+
     console.error('Google Sign-In error:', error);
     throw error;
   } finally {
