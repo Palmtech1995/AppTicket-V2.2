@@ -1032,6 +1032,97 @@ npm run dev`}
               </div>
             </div>
           </div>
+
+          {/* Localhost HTTPS Setup with mkcert */}
+          <div className="bg-gradient-to-br from-emerald-950/40 via-zinc-900 to-black border border-emerald-700/60 rounded-2xl p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600/30 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-emerald-300 flex items-center gap-2">
+                    <span>การเปิดใช้งาน HTTPS บน Localhost ด้วย mkcert (Trusted SSL Certificate)</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-900/60 text-emerald-200 border border-emerald-700/50">100% SECURE</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400">
+                    ทำให้ <code className="font-mono text-emerald-300">https://localhost:3000</code> และ IP เครือข่าย (เช่น <code className="font-mono text-cyan-300">https://192.168.1.xxx:3000</code>) ได้รับการรับรองความปลอดภัยเต็ม 100% เปิดกล้องได้ทุกเบราว์เซอร์
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() =>
+                  copyToClipboard(
+`# 1. ติดตั้ง mkcert (เครื่องมือสร้างใบรับรอง SSL ฟรีสำหรับ Localhost)
+# สำหรับ Windows (ใช้ Chocolatey หรือ Scoop): choco install mkcert หรือ scoop install mkcert
+# สำหรับ macOS: brew install mkcert
+# สำหรับ Ubuntu/Debian: sudo apt install libnss3-tools && curl -JLO "https://dl.fbaipublicfiles.com/mkcert/v1.4.3/mkcert-v1.4.3-linux-amd64" && chmod +x mkcert-v1.4.3-linux-amd64 && sudo mv mkcert-v1.4.3-linux-amd64 /usr/local/bin/mkcert
+
+# 2. ติดตั้ง Root CA ลงในเครื่อง (ทำเพียงครั้งเดียว)
+mkcert -install
+
+# 3. สร้างไฟล์ใบรับรอง SSL สำหรับ localhost และ IP ในวง LAN ของคุณ
+mkcert localhost 127.0.0.1 ::1 192.168.1.50
+
+# จะได้ไฟล์ localhost+3-key.pem และ localhost+3.pem
+# 4. นำไปใส่ในไฟล์ .env
+# HTTPS=true
+# SSL_KEY_PATH=./localhost+3-key.pem
+# SSL_CERT_PATH=./localhost+3.pem`,
+                    'mkcertguide'
+                  )
+                }
+                className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 flex items-center gap-1.5 cursor-pointer border border-emerald-700/60 shrink-0"
+              >
+                {copiedCmd === 'mkcertguide' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedCmd === 'mkcertguide' ? 'คัดลอกคำสั่งแล้ว' : 'คัดลอกชุดคำสั่ง mkcert'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="p-3.5 bg-black/50 rounded-xl border border-zinc-800 space-y-2">
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] flex items-center justify-center">1</span>
+                  ติดตั้ง mkcert & Root CA
+                </span>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  ติดตั้งเครื่องมือ <strong>mkcert</strong> และติดตั้ง Local Root CA ลงในระบบปฏิบัติการ:
+                </p>
+                <pre className="bg-zinc-950 p-2 rounded text-[10px] font-mono text-cyan-300 overflow-x-auto">
+mkcert -install
+                </pre>
+              </div>
+
+              <div className="p-3.5 bg-black/50 rounded-xl border border-zinc-800 space-y-2">
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] flex items-center justify-center">2</span>
+                  สร้างไฟล์ใบรับรอง SSL
+                </span>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  สร้าง Key และ Cert โดยระบุ IP เครื่องเพื่อให้มือถือในวง LAN เปิดผ่าน HTTPS ได้:
+                </p>
+                <pre className="bg-zinc-950 p-2 rounded text-[10px] font-mono text-emerald-300 overflow-x-auto">
+mkcert localhost 127.0.0.1 192.168.1.50
+                </pre>
+              </div>
+
+              <div className="p-3.5 bg-black/50 rounded-xl border border-zinc-800 space-y-2">
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] flex items-center justify-center">3</span>
+                  กำหนดค่าในไฟล์ .env
+                </span>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  กำหนดพาธของไฟล์ใบรับรองใน <code className="text-cyan-300 font-mono">.env</code> แล้วสั่งรัน:
+                </p>
+                <pre className="bg-zinc-950 p-2 rounded text-[10px] font-mono text-amber-300 overflow-x-auto">
+HTTPS=true
+SSL_KEY_PATH=./localhost+2-key.pem
+SSL_CERT_PATH=./localhost+2.pem
+                </pre>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1422,6 +1513,44 @@ MYSQL_DATABASE=xingtai_db
 ></iframe>`}
                   </pre>
                   <p className="text-[10px] text-zinc-500 mt-1">* เปลี่ยน <code className="text-cyan-300 font-mono">yourdomain.com</code> เป็นโดเมนจริงของคุณ</p>
+                </div>
+              </div>
+            </div>
+
+            {/* HTTP Camera Setup Guide Card */}
+            <div className="bg-[#111420] border border-amber-800/50 rounded-2xl p-5 space-y-3 md:col-span-2 relative overflow-hidden">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-600 text-white font-bold flex items-center justify-center text-xs shadow-lg shadow-amber-600/30">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <h4 className="font-bold text-amber-300 text-sm flex items-center gap-2">
+                  <span>คู่มือการตั้งค่าเปิดกล้องสแกน QR ผ่าน HTTP / IP เครือข่าย LAN (Camera on HTTP)</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] bg-amber-900/60 text-amber-200 border border-amber-700/50">CHROME & EDGE</span>
+                </h4>
+              </div>
+
+              <div className="text-xs text-zinc-300 space-y-3">
+                <p className="leading-relaxed text-zinc-400">
+                  ตามมาตรฐานความปลอดภัย W3C เว็บบราวเซอร์สมัยใหม่ (Google Chrome, MS Edge, Safari) จะไม่อนุญาตให้เปิดกล้องแบบวิดีโอสดผ่านโปรโตคอล <strong className="text-red-400">HTTP</strong> หรือ IP ในวง LAN (เช่น <code className="font-mono text-cyan-300">http://192.168.1.xxx:3000</code>) โดยตรง ยกเว้น <code className="font-mono text-cyan-300">localhost</code> หรือเปิดผ่าน <strong className="text-emerald-400">HTTPS</strong>
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-black/40 p-3.5 rounded-xl border border-amber-900/40 space-y-2">
+                    <strong className="text-amber-200 block border-b border-amber-900/40 pb-1">วิธีที่ 1: ปลดล็อกใน Google Chrome / Edge (ไม่ต้องมี SSL)</strong>
+                    <ol className="list-decimal pl-4 space-y-1 text-zinc-300 text-[11px] leading-relaxed">
+                      <li>เปิดแท็บใหม่แล้วพิมพ์ URL: <code className="font-mono text-amber-300 bg-zinc-900 px-1.5 py-0.5 rounded text-[10px] select-all">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code></li>
+                      <li>ในช่อง <strong>Insecure origins treated as secure</strong> ให้ใส่ URL ของระบบ เช่น <code className="font-mono text-cyan-300 bg-zinc-900 px-1 rounded">http://192.168.1.50:3000</code></li>
+                      <li>เปลี่ยนสถานะจาก <strong>Disabled</strong> เป็น <strong>Enabled</strong></li>
+                      <li>กดปุ่ม <strong>Relaunch</strong> ที่มุมล่างขวาเพื่อรีสตาร์ตเบราว์เซอร์ กล้องสดจะเปิดใช้งานได้ทันที</li>
+                    </ol>
+                  </div>
+
+                  <div className="bg-black/40 p-3.5 rounded-xl border border-emerald-900/40 space-y-2">
+                    <strong className="text-emerald-300 block border-b border-emerald-900/40 pb-1">วิธีที่ 2: ถ่ายรูป/เลือกภาพ QR (ใช้งานได้ 100% บนทุกอุปกรณ์)</strong>
+                    <p className="text-[11px] text-zinc-300 leading-relaxed">
+                      ในหน้าต่างสแกน QR Code ของระบบ ให้กดปุ่ม <strong>"ถ่ายรูป / เลือกภาพ QR"</strong> ซึ่งระบบจะเรียกใช้งานแอปกล้องถ่ายรูปของมือถือโดยตรงเพื่อถ่ายภาพและถอดรหัส QR อัตโนมัติด้วย <strong>jsQR Engine</strong> สามารถใช้งานได้ทันทีบน HTTP ทุกชนิดโดยไม่ต้องตั้งค่าใดๆ ในเบราว์เซอร์
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

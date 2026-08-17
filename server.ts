@@ -18,6 +18,7 @@
 
 import express from 'express';
 import http from 'http';
+import https from 'https';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
@@ -455,7 +456,24 @@ async function initDatabaseTables() {
 
 async function startServer() {
   const app = express();
-  const httpServer = http.createServer(app);
+  
+  // HTTPS / SSL Configuration (Optional for Localhost HTTPS)
+  const isHttps = process.env.HTTPS === 'true' || Boolean(process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH);
+  let server: http.Server | https.Server;
+
+  if (isHttps && process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+    try {
+      const key = fs.readFileSync(path.resolve(process.env.SSL_KEY_PATH));
+      const cert = fs.readFileSync(path.resolve(process.env.SSL_CERT_PATH));
+      server = https.createServer({ key, cert }, app);
+      console.log('🔒 HTTPS Mode activated with custom SSL certificates');
+    } catch (err: any) {
+      console.warn('⚠️ Could not load SSL certificates from paths, falling back to HTTP:', err.message);
+      server = http.createServer(app);
+    }
+  } else {
+    server = http.createServer(app);
+  }
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -927,7 +945,7 @@ async function startServer() {
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: process.env.DISABLE_HMR !== 'true' ? { server: httpServer } : false,
+        hmr: process.env.DISABLE_HMR !== 'true' ? { server } : false,
       },
       appType: 'spa',
     });
@@ -941,8 +959,9 @@ async function startServer() {
   }
 
   // Bind server
-  httpServer.listen(PORT, HOST, () => {
-    console.log(`🚀 Xing Tai Enterprise Server running on http://${HOST}:${PORT}`);
+  const protocol = isHttps && process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH ? 'https' : 'http';
+  server.listen(PORT, HOST, () => {
+    console.log(`🚀 Xing Tai Enterprise Server running on ${protocol}://${HOST}:${PORT}`);
     // Non-blocking initial DB verification
     initDatabaseTables().catch(() => {});
   });

@@ -29,7 +29,13 @@ import {
   RefreshCw,
   HelpCircle,
   Smartphone,
+  Copy,
+  Check,
+  Image as ImageIcon,
+  ShieldAlert,
+  Globe,
 } from 'lucide-react';
+import jsQR from 'jsqr';
 import { Asset } from '../../types';
 
 interface QRScannerModalProps {
@@ -58,10 +64,18 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const [isHttpsOrLocalhost, setIsHttpsOrLocalhost] = useState(true);
   const [scanStatus, setScanStatus] = useState<string>('กำลังเตรียมระบบกล้อง...');
   const [showPermissionGuide, setShowPermissionGuide] = useState(false);
+  const [showHttpGuide, setShowHttpGuide] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedFlag, setCopiedFlag] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const scanIntervalRef = useRef<number | null>(null);
+
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {
@@ -91,8 +105,40 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     if (found) {
       setMatchedAsset(found);
       setScanStatus(`สแกนสำเร็จ: ${found.assetName} (${found.assetId})`);
+    } else {
+      setScanStatus(`ถอดรหัสสำเร็จ: "${cleaned}" (ไม่พบในรายการทรัพย์สิน)`);
     }
   }, [assets]);
+
+  // Fallback decoder using jsQR canvas scanning
+  const scanVideoFrameWithJsQR = useCallback(() => {
+    if (!videoRef.current || videoRef.current.readyState !== videoRef.current.HAVE_ENOUGH_DATA) return;
+    
+    try {
+      if (!canvasRef.current) {
+        canvasRef.current = document.createElement('canvas');
+      }
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+
+      if (code && code.data) {
+        handleMatchCode(code.data);
+      }
+    } catch {
+      // Ignore frame read errors
+    }
+  }, [handleMatchCode]);
 
   const startCamera = useCallback(async () => {
     setPermissionDenied(false);
@@ -108,7 +154,8 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setPermissionDenied(true);
-      setScanStatus('เบราว์เซอร์ของคุณไม่รองรับ Camera API หรือต้องเปิดผ่าน HTTPS/Localhost');
+      setShowHttpGuide(!isSecure);
+      setScanStatus('เบราว์เซอร์บล็อกกล้องบน HTTP — แนะนำใช้ปุ่ม "ถ่ายรูป/เลือกภาพ QR" หรือเปิดสิทธิ์ใน Chrome Flags');
       return;
     }
 
@@ -133,9 +180,9 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         videoRef.current.muted = true;
         await videoRef.current.play().catch(() => {});
         setCameraActive(true);
-        setScanStatus('กำลังเปิดกล้อง... เล็งไปที่ QR Code หรือ Barcode ของทรัพย์สิน');
+        setScanStatus('กล้องทำงานแล้ว: เล็งไปที่ QR Code หรือ Barcode ของทรัพย์สิน');
 
-        // Check for native BarcodeDetector API (supported in Chrome Android, Safari 17+)
+        // Check for native BarcodeDetector API or fallback to jsQR
         if ('BarcodeDetector' in window) {
           try {
             const barcodeDetector = new (window as any).BarcodeDetector({
@@ -149,21 +196,32 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                   if (barcodes && barcodes.length > 0) {
                     const detectedVal = barcodes[0].rawValue;
                     handleMatchCode(detectedVal);
+                  } else {
+                    scanVideoFrameWithJsQR();
                   }
                 } catch {
-                  // Silently continue frame scan
+                  scanVideoFrameWithJsQR();
                 }
               }
-            }, 500);
+            }, 400);
+            return;
           } catch {
-            // BarcodeDetector setup skipped
+            // Fallback to jsQR interval
           }
         }
+
+        // Default to jsQR interval loop
+        scanIntervalRef.current = window.setInterval(() => {
+          scanVideoFrameWithJsQR();
+        }, 400);
       }
     } catch (err: any) {
       console.warn('Camera access error:', err);
       setCameraActive(false);
       setPermissionDenied(true);
+      if (!isSecure) {
+        setShowHttpGuide(true);
+      }
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setScanStatus('คุณยังไม่ได้อนุญาตให้เข้าถึงกล้อง (Permission Denied)');
       } else if (err.name === 'NotFoundError') {
@@ -172,7 +230,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         setScanStatus('ไม่สามารถเชื่อมต่อกล้องได้: ' + (err.message || 'Error'));
       }
     }
-  }, [handleMatchCode]);
+  }, [handleMatchCode, scanVideoFrameWithJsQR]);
 
   useEffect(() => {
     if (isOpen) {
@@ -182,11 +240,95 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
       setMatchedAsset(null);
       setManualCode('');
       setShowPermissionGuide(false);
+      setShowHttpGuide(false);
     }
     return () => {
       stopCamera();
     };
   }, [isOpen, startCamera, stopCamera]);
+
+  // Decode QR from uploaded image or camera snapshot file (Works 100% on HTTP & HTTPS)
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingImage(true);
+    setScanStatus('กำลังอ่าน QR Code จากรูปภาพ...');
+
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = async () => {
+        try {
+          // 1. Try native BarcodeDetector first
+          if ('BarcodeDetector' in window) {
+            try {
+              const detector = new (window as any).BarcodeDetector({
+                formats: ['qr_code', 'code_128', 'code_39', 'ean_13'],
+              });
+              const barcodes = await detector.detect(img);
+              if (barcodes && barcodes.length > 0) {
+                handleMatchCode(barcodes[0].rawValue);
+                setIsProcessingImage(false);
+                URL.revokeObjectURL(objectUrl);
+                return;
+              }
+            } catch {
+              // fallback to jsQR
+            }
+          }
+
+          // 2. Fallback to jsQR canvas processing
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code && code.data) {
+              handleMatchCode(code.data);
+              setIsProcessingImage(false);
+              URL.revokeObjectURL(objectUrl);
+              return;
+            }
+          }
+
+          setScanStatus('❌ ไม่พบ QR Code ในรูปภาพที่เลือก กรุณาถ่ายใหม่อีกครั้งให้ภาพคมชัด');
+        } catch (e: any) {
+          setScanStatus('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ: ' + e.message);
+        } finally {
+          setIsProcessingImage(false);
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+
+      img.onerror = () => {
+        setScanStatus('❌ ไม่สามารถโหลดไฟล์ภาพได้');
+        setIsProcessingImage(false);
+        URL.revokeObjectURL(objectUrl);
+      };
+
+      img.src = objectUrl;
+    } catch (err: any) {
+      setScanStatus('เกิดข้อผิดพลาด: ' + err.message);
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handleCopyOrigin = () => {
+    navigator.clipboard.writeText(currentOrigin);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
+  };
+
+  const handleCopyFlag = () => {
+    navigator.clipboard.writeText('chrome://flags/#unsafely-treat-insecure-origin-as-secure');
+    setCopiedFlag(true);
+    setTimeout(() => setCopiedFlag(false), 2000);
+  };
 
   const handleManualSearch = (code: string) => {
     setManualCode(code);
@@ -229,12 +371,24 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowHttpGuide(!showHttpGuide)}
+              className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs ${
+                showHttpGuide
+                  ? 'bg-amber-900/60 text-amber-300 border border-amber-600'
+                  : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-800'
+              }`}
+              title="วิธีตั้งค่าเปิดกล้องบน HTTP (Chrome/Edge)"
+            >
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">วิธีเปิดกล้องบน HTTP</span>
+            </button>
+            <button
               onClick={() => setShowPermissionGuide(!showPermissionGuide)}
               className="p-1.5 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-xs"
               title="วิธีตั้งค่าอนุญาตกล้องบนมือถือ"
             >
               <HelpCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">วิธีเปิดกล้อง</span>
+              <span className="hidden sm:inline">สิทธิ์กล้อง</span>
             </button>
             <button
               onClick={onClose}
@@ -246,8 +400,83 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5">
+          {/* ================= HTTP Camera Guide Banner ================= */}
+          {showHttpGuide && (
+            <div className="bg-gradient-to-br from-amber-950/70 to-zinc-900 border-2 border-amber-500/80 rounded-xl p-4 text-xs space-y-3 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-amber-800/60 pb-2">
+                <span className="font-bold text-amber-300 flex items-center gap-2 text-sm">
+                  <ShieldAlert className="w-4 h-4 text-amber-400" />
+                  วิธีปลดล็อกเปิดกล้องสดบน HTTP (Google Chrome / Edge)
+                </span>
+                <button
+                  onClick={() => setShowHttpGuide(false)}
+                  className="text-zinc-400 hover:text-white text-xs"
+                >
+                  ปิดหน้านี้
+                </button>
+              </div>
+
+              <p className="text-[11px] text-zinc-300 leading-relaxed">
+                ตามมาตรฐานความปลอดภัย เว็บบราวเซอร์จะบล็อกกล้องสดอัตโนมัติเมื่อเปิดผ่าน <strong>HTTP</strong> หรือ <strong>IP เครือข่าย (เช่น http://192.168.x.x:3000)</strong> คุณสามารถปลดล็อกได้ง่ายๆ ใน 3 ขั้นตอน:
+              </p>
+
+              <div className="space-y-2 bg-black/60 p-3 rounded-lg border border-amber-900/50">
+                <div className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                  <div className="flex-1">
+                    <span className="text-zinc-200">เปิดแท็บใหม่แล้วพิมพ์ URL นี้ใน Google Chrome หรือ Edge:</span>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="bg-zinc-900 text-amber-300 px-2 py-1 rounded font-mono text-[10px] select-all break-all border border-zinc-700">
+                        chrome://flags/#unsafely-treat-insecure-origin-as-secure
+                      </code>
+                      <button
+                        onClick={handleCopyFlag}
+                        className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-[10px] font-bold flex items-center gap-1 shrink-0"
+                      >
+                        {copiedFlag ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedFlag ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 pt-1 border-t border-zinc-800">
+                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                  <div className="flex-1">
+                    <span className="text-zinc-200">ในช่องค้นหา ให้ใส่ URL ของระบบนี้ แล้วเปลี่ยนสถานะเป็น <strong>Enabled</strong>:</span>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="bg-zinc-900 text-cyan-300 px-2 py-1 rounded font-mono text-[10px] font-bold select-all border border-zinc-700">
+                        {currentOrigin}
+                      </code>
+                      <button
+                        onClick={handleCopyOrigin}
+                        className="px-2 py-1 bg-cyan-900/60 hover:bg-cyan-800 text-cyan-200 rounded text-[10px] font-bold flex items-center gap-1 shrink-0 border border-cyan-700/60"
+                      >
+                        {copiedUrl ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedUrl ? 'คัดลอกแล้ว' : 'คัดลอก URL ระบบ'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 pt-1 border-t border-zinc-800">
+                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                  <div className="text-zinc-200">
+                    กดปุ่ม <strong className="text-emerald-400">Relaunch (เปิดบราวเซอร์ใหม่)</strong> ด้านล่างขวาของ Chrome กล้องสดจะเปิดใช้งานได้ทันที 100%!
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-emerald-950/40 border border-emerald-800/60 p-2.5 rounded-lg flex items-center justify-between">
+                <span className="text-[11px] text-emerald-300">
+                  💡 <strong>หรือวิธีที่ง่ายที่สุดโดยไม่ต้องตั้งค่า:</strong> ใช้ปุ่ม <strong>"ถ่ายภาพ QR / เลือกรูป"</strong> ด้านล่าง ซึ่งทำงานได้ทันทีบน HTTP ทุกเบราว์เซอร์ครับ
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Mobile Camera Permission Troubleshooting Guide */}
-          {(showPermissionGuide || permissionDenied || !isHttpsOrLocalhost) && (
+          {(showPermissionGuide || (permissionDenied && !showHttpGuide)) && (
             <div className="bg-amber-950/40 border border-amber-800/70 rounded-xl p-4 text-xs space-y-2.5 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-amber-300 flex items-center gap-2">
@@ -282,12 +511,6 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                   </ul>
                 </div>
               </div>
-
-              {!isHttpsOrLocalhost && (
-                <p className="text-[11px] text-amber-400/90 pt-1">
-                  ⚠️ <em>หมายเหตุ: เบราว์เซอร์บนมือถือจะอนุญาตให้เปิดกล้องได้เฉพาะ URL ที่เป็น <strong>HTTPS</strong> หรือเปิดผ่าน <strong>Localhost</strong> เท่านั้น หากเข้าผ่าน IP เครือข่าย (เช่น 192.168.x.x) ให้เปิดผ่าน HTTPS หรือ Cloud URL ของระบบครับ</em>
-                </p>
-              )}
             </div>
           )}
 
@@ -302,23 +525,30 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
             />
             
             {!cameraActive && (
-              <div className="text-center p-6 space-y-2">
+              <div className="text-center p-6 space-y-2.5">
                 <Camera className="w-12 h-12 text-zinc-600 mx-auto" />
                 <div className="text-xs text-zinc-300 font-bold">
-                  {permissionDenied ? 'ยังไม่ได้รับสิทธิ์เปิดกล้อง' : 'โหมดกล้องถ่ายภาพ (Camera Scanner)'}
+                  {permissionDenied ? 'ยังไม่ได้รับสิทธิ์เปิดกล้อง หรือเปิดผ่าน HTTP' : 'โหมดกล้องถ่ายภาพ (Camera Scanner)'}
                 </div>
                 <div className="text-[11px] text-zinc-400 max-w-sm mx-auto">
                   {scanStatus}
                 </div>
-                {permissionDenied && (
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                   <button
                     onClick={startCamera}
-                    className="mt-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>กดอนุญาตกล้องอีกครั้ง</span>
+                    <span>ลองเปิดกล้องอีกครั้ง</span>
                   </button>
-                )}
+                  <button
+                    onClick={() => setShowHttpGuide(true)}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>ดูวิธีเปิดบน HTTP</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -334,6 +564,48 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* ================= SNAP PHOTO / UPLOAD QR IMAGE (100% WORKS ON HTTP) ================= */}
+          <div className="p-3 bg-[#151926] border border-cyan-900/60 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-950 flex items-center justify-center text-cyan-400 shrink-0">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-cyan-200">ถ่ายรูปด้วยกล้องมือถือ หรือเลือกไฟล์รูป QR</div>
+                <div className="text-[10px] text-zinc-400">ใช้งานได้ 100% บน HTTP / LAN โดยไม่ต้องตั้งค่าใดๆ</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingImage}
+                className="flex-1 sm:flex-initial px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
+              >
+                {isProcessingImage ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>กำลังประมวลผล...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>ถ่ายรูป / เลือกภาพ QR</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Quick Demo Scan Barcode buttons */}
@@ -453,3 +725,4 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     </div>
   );
 };
+
