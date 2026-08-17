@@ -83,33 +83,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] flex items-center justify-center p-4 sm:p-6 lg:p-10 relative overflow-hidden font-sans text-zinc-100">
+    <div className="min-h-screen min-h-[100dvh] bg-[#07090e] flex items-center justify-center p-3 sm:p-6 lg:p-10 relative overflow-x-hidden font-sans text-zinc-100 py-6 sm:py-10">
       {/* Background Ambient Glows */}
-      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-blue-900/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] bg-cyan-900/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[400px] h-[400px] bg-indigo-950/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-blue-900/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-cyan-900/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-indigo-950/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Dual-Pane Window */}
-      <div className="w-full max-w-6xl min-h-[600px] bg-[#0c101a]/95 border border-zinc-800/80 rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-6xl bg-[#0c101a]/95 border border-zinc-800/80 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 backdrop-blur-xl relative z-10 my-auto">
         
         {/* ========================================================================= */}
         {/* LEFT PANE: BRAND HERO, 3D AMBIENCE & FLOATING GLASS CARD */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-6 xl:col-span-7 bg-gradient-to-br from-[#0e1424] via-[#090d18] to-[#060810] p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-zinc-800/70">
+        <div className="lg:col-span-6 xl:col-span-7 bg-gradient-to-br from-[#0e1424] via-[#090d18] to-[#060810] p-5 sm:p-8 lg:p-12 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-zinc-800/70">
           
           {/* Subtle Grid Pattern */}
           <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px]" />
           
           {/* Subtle Wave Glow */}
-          <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-blue-950/40 via-cyan-950/20 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-48 sm:h-64 bg-gradient-to-t from-blue-950/40 via-cyan-950/20 to-transparent pointer-events-none" />
 
           {/* Top Brand Header with Official Xing Tai Logo */}
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 shadow-inner">
+          <div className="relative z-10 flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/5 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl border border-white/10 shadow-inner">
               <XingTaiLogo size="sm" textColor="white" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-950/70 border border-emerald-700/60 text-emerald-300">
+              <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium bg-emerald-950/70 border border-emerald-700/60 text-emerald-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 Production Portal v2.4
               </span>
@@ -117,77 +117,77 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
           </div>
 
           {/* Mid Section: Floating Status Glass Card */}
-          <div className="my-8 relative z-10 max-w-md">
-            <div className="bg-[#111728]/80 border border-blue-500/20 rounded-2xl p-5 shadow-2xl backdrop-blur-md relative overflow-hidden space-y-4">
+          <div className="my-5 sm:my-8 relative z-10 max-w-md w-full">
+            <div className="bg-[#111728]/80 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-md relative overflow-hidden space-y-3 sm:space-y-4">
               {/* Card top bar */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                    <Building2 className="w-5 h-5" />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 shrink-0">
+                    <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <div className="font-bold text-sm text-white">
+                    <div className="font-bold text-xs sm:text-sm text-white">
                       Xing Tai Asset Governance
                     </div>
-                    <div className="text-[11px] text-blue-300/80">Enterprise Management System</div>
+                    <div className="text-[10px] sm:text-[11px] text-blue-300/80">Enterprise Management System</div>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-blue-950/80 border border-blue-700/60 text-blue-300">
+                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-mono font-bold bg-blue-950/80 border border-blue-700/60 text-blue-300 shrink-0">
                   ENTERPRISE
                 </span>
               </div>
 
               {/* Progress & Integrity */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs">
                   <span className="text-zinc-400 font-medium">Core System & Database Health</span>
                   <span className="text-emerald-400 font-mono font-bold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" /> 100% Operational
                   </span>
                 </div>
-                <div className="w-full bg-zinc-800/80 rounded-full h-2 overflow-hidden p-0.5 border border-zinc-700/50">
+                <div className="w-full bg-zinc-800/80 rounded-full h-1.5 sm:h-2 overflow-hidden p-0.5 border border-zinc-700/50">
                   <div className="bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 h-full rounded-full w-full" />
                 </div>
               </div>
 
               {/* Quick Hub Stats */}
-              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-zinc-800/70 text-center">
-                <div className="bg-black/30 rounded-lg p-2 border border-zinc-800/60">
-                  <div className="text-[10px] text-zinc-400">Head Office</div>
-                  <div className="text-xs font-bold text-zinc-200">Bangkok (TH100)</div>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-1 border-t border-zinc-800/70 text-center">
+                <div className="bg-black/30 rounded-lg p-1.5 sm:p-2 border border-zinc-800/60">
+                  <div className="text-[9px] sm:text-[10px] text-zinc-400">Head Office</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-zinc-200 truncate">Bangkok (TH100)</div>
                 </div>
-                <div className="bg-black/30 rounded-lg p-2 border border-zinc-800/60">
-                  <div className="text-[10px] text-zinc-400">Rayong Plant</div>
-                  <div className="text-xs font-bold text-zinc-200">Rayong (TH200)</div>
+                <div className="bg-black/30 rounded-lg p-1.5 sm:p-2 border border-zinc-800/60">
+                  <div className="text-[9px] sm:text-[10px] text-zinc-400">Rayong Plant</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-zinc-200 truncate">Rayong (TH200)</div>
                 </div>
-                <div className="bg-black/30 rounded-lg p-2 border border-zinc-800/60">
-                  <div className="text-[10px] text-zinc-400">Security Standard</div>
-                  <div className="text-xs font-bold text-cyan-400">RBAC 5-Tier</div>
+                <div className="bg-black/30 rounded-lg p-1.5 sm:p-2 border border-zinc-800/60">
+                  <div className="text-[9px] sm:text-[10px] text-zinc-400">Security</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-cyan-400 truncate">RBAC 5-Tier</div>
                 </div>
               </div>
             </div>
 
             {/* Main Headline */}
-            <div className="mt-8 space-y-3">
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            <div className="mt-5 sm:mt-8 space-y-2 sm:space-y-3">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
                 Enterprise Asset & IT{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-300">
                   Management Portal
                 </span>
               </h2>
-              <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
+              <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-md">
                 ระบบบริหารจัดการทะเบียนทรัพย์สิน, เอกสารใบโอนย้าย A4 มาตรฐาน 3 ขั้นตอนอนุมัติ, สแกน QR Code ตรวจสอบ และระบบ IT Helpdesk Ticket บริษัท ซิงไท่ เทรดดิ้ง (ประเทศไทย) จำกัด
               </p>
             </div>
           </div>
 
           {/* Bottom Security Notes */}
-          <div className="relative z-10 flex items-center justify-between pt-4 border-t border-zinc-800/60">
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="relative z-10 flex items-center justify-between pt-3 sm:pt-4 border-t border-zinc-800/60 flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-zinc-400">
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
               <span>TLS 1.3 & Encrypted Authentication</span>
             </div>
-            <div className="text-[11px] text-zinc-500 font-mono">
+            <div className="text-[10px] sm:text-[11px] text-zinc-500 font-mono">
               Xing Tai Trading IT Services
             </div>
           </div>
@@ -196,31 +196,31 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
         {/* ========================================================================= */}
         {/* RIGHT PANE: PRODUCTION AUTH CARD */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-6 xl:col-span-5 bg-[#0e121d] p-8 sm:p-12 flex flex-col justify-between space-y-8">
+        <div className="lg:col-span-6 xl:col-span-5 bg-[#0e121d] p-5 sm:p-8 lg:p-12 flex flex-col justify-between space-y-6 sm:space-y-8">
           
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Header */}
             <div>
               <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 เข้าสู่ระบบ
               </h3>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1.5">
+              <p className="text-xs sm:text-sm text-zinc-400 mt-1 sm:mt-1.5">
                 กรอกรหัสพนักงานหรืออีเมลเพื่อเข้าสู่ระบบงาน
               </p>
             </div>
 
             {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-start gap-2.5 animate-shake">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-red-950/80 border border-red-800 text-red-200 text-xs flex items-start gap-2.5 animate-shake">
                 <ShieldCheck className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div className="leading-snug">{errorMessage}</div>
               </div>
             )}
 
             {/* FORM */}
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
               {/* Staff ID / Email */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-2">
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5 sm:mb-2">
                   รหัสพนักงาน หรือ อีเมลองค์กร (Staff ID / Email)
                 </label>
                 <div className="relative">
@@ -231,14 +231,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
                     placeholder="เช่น ADM-001, IT-260802 หรือ email@xingtai.co.th"
                     value={usernameInput}
                     onChange={(e) => setUsernameInput(e.target.value)}
-                    className="w-full bg-[#141926] border border-zinc-700/80 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full bg-[#141926] border border-zinc-700/80 rounded-xl pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[44px]"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5 sm:mb-2">
                   <label className="block text-xs font-semibold text-zinc-300">
                     รหัสผ่าน (Password)
                   </label>
@@ -251,12 +251,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
                     placeholder="กรอกรหัสผ่านของคุณ"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
-                    className="w-full bg-[#141926] border border-zinc-700/80 rounded-xl pl-10 pr-11 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                    className="w-full bg-[#141926] border border-zinc-700/80 rounded-xl pl-10 pr-11 py-2.5 sm:py-3 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors min-h-[44px]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer p-1"
+                    aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -283,7 +284,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-sm py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-70"
+                className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs sm:text-sm py-3 sm:py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] cursor-pointer disabled:opacity-70 min-h-[44px]"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -297,7 +298,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
             </form>
 
             {/* Help / IT Support Notice */}
-            <div className="bg-[#141926]/70 border border-zinc-800/80 rounded-xl p-3.5 text-xs text-zinc-400 flex items-start gap-2.5">
+            <div className="bg-[#141926]/70 border border-zinc-800/80 rounded-xl p-3 sm:p-3.5 text-xs text-zinc-400 flex items-start gap-2.5">
               <HelpCircle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
               <div className="leading-relaxed text-[11px]">
                 <span className="font-semibold text-zinc-300">ต้องการความช่วยเหลือ?</span> ติดต่อฝ่ายไอที (IT Support) โทรภายใน 1102 หรือเปิดแจ้งซ่อมผ่านระบบเพื่อขอรีเซ็ตรหัสผ่าน
@@ -306,7 +307,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ staffList, onLoginSucc
           </div>
 
           {/* Footer Copyright */}
-          <div className="pt-4 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
+          <div className="pt-3 sm:pt-4 border-t border-zinc-800/80 flex items-center justify-between text-[11px] sm:text-xs text-zinc-500 flex-wrap gap-1">
             <span>© 2026 Xing Tai Trading (Thailand) Co., Ltd.</span>
             <span>All Rights Reserved</span>
           </div>

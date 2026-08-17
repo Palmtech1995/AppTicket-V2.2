@@ -117,9 +117,9 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-[#12141c] border border-cyan-700/60 rounded-2xl w-full max-w-2xl text-zinc-100 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-[#12141c] border border-cyan-700/60 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col text-zinc-100 shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="bg-[#181b26] p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between">
+        <div className="bg-[#181b26] p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md">
               <User className="w-5 h-5" />
@@ -147,14 +147,14 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
         {/* Success Alert */}
         {successMsg && (
-          <div className="bg-emerald-950/80 border-b border-emerald-700 text-emerald-300 px-5 py-2.5 text-xs flex items-center gap-2 font-medium">
+          <div className="bg-emerald-950/80 border-b border-emerald-700 text-emerald-300 px-5 py-2.5 text-xs flex items-center gap-2 font-medium shrink-0">
             <Check className="w-4 h-4 text-emerald-400" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1 flex flex-col justify-between">
           {/* Section 1: Identity Info */}
           <div className="space-y-3">
             <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-zinc-800 pb-1.5">
