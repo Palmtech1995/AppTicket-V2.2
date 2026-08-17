@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { ITTicket, TechnicianMetric, WeeklyProblemSummary } from '../../types';
 import { exportTicketsToExcel, exportKPIReportToExcel } from '../../utils/exportUtils';
+import { ReportA4PrintModal, ReportType } from './ReportA4PrintModal';
 
 interface ITReportViewProps {
   tickets: ITTicket[];
@@ -66,6 +67,15 @@ export const ITReportView: React.FC<ITReportViewProps> = ({
 
   // Selected week for Weekly Problem modal / deep-dive
   const [selectedWeekNum, setSelectedWeekNum] = useState<number>(33);
+
+  // Dedicated A4 Report Modal State
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printReportType, setPrintReportType] = useState<ReportType>('IT_KPI');
+
+  const handleOpenPrintModal = (type: ReportType = 'IT_KPI') => {
+    setPrintReportType(type);
+    setIsPrintModalOpen(true);
+  };
 
   // Quick Preset handler
   const handlePresetChange = (preset: typeof datePreset) => {
@@ -248,11 +258,19 @@ export const ITReportView: React.FC<ITReportViewProps> = ({
             </button>
 
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-[#1b1e27] hover:bg-[#252a38] text-zinc-200 border border-zinc-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm"
+              onClick={() =>
+                handleOpenPrintModal(
+                  activeSubTab === 'KPI_ASSESSMENT'
+                    ? 'IT_KPI'
+                    : activeSubTab === 'WEEKLY_PROBLEMS'
+                    ? 'WEEKLY_PROBLEMS'
+                    : 'TICKETS_HISTORY'
+                )
+              }
+              className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-950/50 active:scale-95 cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-zinc-400" />
-              <span>พิมพ์รายงาน (Print)</span>
+              <Printer className="w-4 h-4 text-cyan-200" />
+              <span>พิมพ์รายงาน A4 (Print Report)</span>
             </button>
           </div>
         </div>
@@ -914,6 +932,18 @@ export const ITReportView: React.FC<ITReportViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Dedicated A4 Report Modal & Print Engine */}
+      <ReportA4PrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        initialReportType={printReportType}
+        tickets={filteredTickets}
+        technicians={technicians}
+        weeklyProblems={weeklyProblems}
+        filterStartDate={startDate}
+        filterEndDate={endDate}
+      />
     </div>
   );
 };

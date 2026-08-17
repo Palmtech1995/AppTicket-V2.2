@@ -48,6 +48,7 @@ interface NavbarProps {
   onToggleMobileMenu?: () => void;
   dbSyncStatus?: 'idle' | 'syncing' | 'synced' | 'error';
   onForceSyncDb?: () => void;
+  onFetchFromDb?: () => void;
   notifications?: AppNotification[];
   onMarkNotificationAsRead?: (id: string) => void;
   onMarkAllNotificationsAsRead?: () => void;
@@ -69,6 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleMobileMenu,
   dbSyncStatus = 'synced',
   onForceSyncDb,
+  onFetchFromDb,
   notifications = [],
   onMarkNotificationAsRead,
   onMarkAllNotificationsAsRead,
@@ -151,6 +153,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           onSelectTicket={(ticketId) => onSelectTicketNotification && onSelectTicketNotification(ticketId)}
           onSendTestNotification={onSendTestNotification}
         />
+
+        {/* Database Quick Fetch & Sync Status Badge */}
+        {onFetchFromDb && (
+          <button
+            onClick={onFetchFromDb}
+            className="hidden sm:flex items-center gap-1.5 bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-800/80 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm active:scale-95 cursor-pointer"
+            title="ดึงข้อมูลล่าสุดจากฐานข้อมูล (Database / MySQL) เข้าสู่ระบบทันที"
+          >
+            <Database className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden md:inline">ดึงข้อมูลจาก DB</span>
+          </button>
+        )}
 
         {/* Database Auto-Sync Status Badge */}
         <div

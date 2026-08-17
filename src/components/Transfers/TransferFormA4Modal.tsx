@@ -40,6 +40,7 @@ import {
 import { Asset, FormAdjustmentConfig, TransferForm, UserProfile } from '../../types';
 import { DEFAULT_FORM_ADJUSTMENT } from '../../data/initialData';
 import { exportElementToPdf, exportTransferFormToExcel } from '../../utils/exportUtils';
+import { printElementDirectly } from '../../utils/printUtils';
 import {
   SIGNATURE_BOX_DEFINITIONS,
   getNormalizedBoxOrder,
@@ -316,11 +317,16 @@ export const TransferFormA4Modal: React.FC<TransferFormA4ModalProps> = ({
             </button>
 
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-zinc-950 font-bold border border-cyan-400 rounded-lg text-xs shadow-md transition-colors"
+              onClick={() =>
+                printElementDirectly('a4-landscape-transfer-form', {
+                  orientation: 'landscape',
+                  docTitle: `Transfer_Form_${transfer?.formNo || 'A4'}`,
+                })
+              }
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-zinc-950 font-bold border border-cyan-400 rounded-lg text-xs shadow-md transition-colors cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print</span>
+              <span>พิมพ์เอกสาร A4 (Print)</span>
             </button>
 
             <button

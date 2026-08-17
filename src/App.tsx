@@ -27,6 +27,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { CommandCenter } from './components/Dashboard/CommandCenter';
@@ -149,6 +150,104 @@ export function App() {
   // Google Sheets Sync Modal state
   const [isGoogleSheetsSyncOpen, setIsGoogleSheetsSyncOpen] = useState(false);
 
+  // Database Notification Toast state
+  const [dbToast, setDbToast] = useState<{
+    show: boolean;
+    type: 'success' | 'info' | 'error';
+    title: string;
+    message: string;
+    source?: string;
+  } | null>(null);
+
+  // Master Data Pull from Database (MySQL / Server Store)
+  const handleFetchDataFromDatabase = async (showNotification = true): Promise<boolean> => {
+    try {
+      setDbSyncStatus('syncing');
+      const res = await fetchDataFromMySQL();
+      if (res && res.success && res.data) {
+        const d = res.data;
+        if (Array.isArray(d.assets)) {
+          setAssets(d.assets);
+          saveAssets(d.assets);
+        }
+        if (Array.isArray(d.transfers)) {
+          setTransfers(d.transfers);
+          saveTransfers(d.transfers);
+        }
+        if (Array.isArray(d.tickets)) {
+          setTickets(d.tickets);
+          saveTickets(d.tickets);
+        }
+        if (Array.isArray(d.staffList) && d.staffList.length > 0) {
+          setStaffList(d.staffList);
+          saveStaff(d.staffList);
+        }
+        if (Array.isArray(d.branches) && d.branches.length > 0) {
+          setBranches(d.branches);
+          saveBranches(d.branches);
+        }
+        if (Array.isArray(d.departments) && d.departments.length > 0) {
+          setDepartments(d.departments);
+          saveDepartments(d.departments);
+        }
+        if (Array.isArray(d.weeklyProblems)) {
+          setWeeklyProblems(d.weeklyProblems);
+          saveWeeklyProblems(d.weeklyProblems);
+        }
+        if (d.formConfig) {
+          setFormConfig(d.formConfig);
+          saveFormConfig(d.formConfig);
+        }
+        if (d.rolePermissions) {
+          setRolePermissions(d.rolePermissions);
+          saveRolePermissions(d.rolePermissions);
+        }
+        setDbSyncStatus('synced');
+
+        if (showNotification) {
+          const sourceName = res.source === 'mysql' ? 'MySQL Database' : 'Server Database';
+          const assetCount = d.assets?.length ?? 0;
+          const ticketCount = d.tickets?.length ?? 0;
+          const transferCount = d.transfers?.length ?? 0;
+          setDbToast({
+            show: true,
+            type: 'success',
+            title: `ดึงข้อมูลจาก ${sourceName} สำเร็จ`,
+            message: `โหลดทรัพย์สิน ${assetCount} รายการ, ใบแจ้งซ่อม ${ticketCount} รายการ, ใบโอนย้าย ${transferCount} รายการ`,
+            source: res.source,
+          });
+          setTimeout(() => setDbToast(null), 4500);
+        }
+        return true;
+      } else {
+        if (showNotification) {
+          setDbToast({
+            show: true,
+            type: 'info',
+            title: 'เชื่อมต่อฐานข้อมูลเรียบร้อย',
+            message: res?.message || 'ข้อมูลปัจจุบันตรงกับฐานข้อมูลเซิร์ฟเวอร์แล้ว',
+          });
+          setTimeout(() => setDbToast(null), 3500);
+        }
+        setDbSyncStatus('synced');
+        return false;
+      }
+    } catch (err: any) {
+      console.error('Fetch DB error:', err);
+      setDbSyncStatus('error');
+      if (showNotification) {
+        setDbToast({
+          show: true,
+          type: 'error',
+          title: 'ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้',
+          message: err.message || 'โปรดตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์ MySQL',
+        });
+        setTimeout(() => setDbToast(null), 4500);
+      }
+      return false;
+    }
+  };
+
   // 1. Initial Load: Fetch master state from Database on startup
   useEffect(() => {
     let isMounted = true;
@@ -195,30 +294,50 @@ export function App() {
     };
   }, []);
 
-  // Dynamic derivation of technician metrics from staff and tickets if empty
+  // Dynamic derivation of technician metrics from Database staffList (Role: IT & ADMIN) and tickets
   useEffect(() => {
-    if (staffList.length > 0 && technicians.length === 0) {
+    if (staffList.length > 0) {
       const itStaff = staffList.filter((s) => s.role === 'IT' || s.role === 'ADMIN');
       if (itStaff.length > 0) {
-        const derivedTechs: TechnicianMetric[] = itStaff.map((st) => ({
-          id: `tech-${st.id}`,
-          staffId: st.staffId,
-          name: st.thaiName || st.name,
-          shortCode: st.nickname ? st.nickname.substring(0, 2).toUpperCase() : st.name.substring(0, 2).toUpperCase(),
-          roleTitle: st.role === 'ADMIN' ? 'System Administrator / IT Lead' : 'IT Support Specialist',
-          efficiency: 95,
-          activeTickets: tickets.filter((t) => (t.assignedToTechnician === `tech-${st.id}` || t.assignedToTechnician === st.id) && t.status !== 'RESOLVED' && t.status !== 'CLOSED').length,
-          resolved3Months: tickets.filter((t) => (t.assignedToTechnician === `tech-${st.id}` || t.assignedToTechnician === st.id) && (t.status === 'RESOLVED' || t.status === 'CLOSED')).length,
-          avgResolutionHours: 2.5,
-          slaOnTimeRate: 98,
-          grade: 'A',
-          totalCostManaged: 0,
-        }));
+        const derivedTechs: TechnicianMetric[] = itStaff.map((st) => {
+          const userTickets = tickets.filter(
+            (t) =>
+              t.assignedToTechnician === st.id ||
+              t.assignedToTechnician === st.staffId ||
+              t.assignedToTechnician === `tech-${st.id}` ||
+              (t.assignedTechnicianName && (t.assignedTechnicianName === st.name || t.assignedTechnicianName === st.thaiName))
+          );
+          const activeCount = userTickets.filter((t) => t.status !== 'RESOLVED' && t.status !== 'CLOSED').length;
+          const resolvedCount = userTickets.filter((t) => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
+          const resolvedWithHours = userTickets.filter((t) => (t.status === 'RESOLVED' || t.status === 'CLOSED') && t.resolutionHours);
+          const avgHours = resolvedWithHours.length > 0
+            ? Number((resolvedWithHours.reduce((acc, curr) => acc + (curr.resolutionHours || 0), 0) / resolvedWithHours.length).toFixed(1))
+            : 2.5;
+
+          const existing = technicians.find((t) => t.id === st.id || t.id === `tech-${st.id}` || t.staffId === st.staffId);
+
+          return {
+            id: st.id,
+            staffId: st.staffId,
+            name: st.thaiName || st.name,
+            shortCode: st.nickname ? st.nickname.substring(0, 3).toUpperCase() : (st.thaiName || st.name).substring(0, 2).toUpperCase(),
+            roleTitle: st.role === 'ADMIN' ? 'System Administrator / IT Lead' : 'IT Support Specialist',
+            title: st.role === 'ADMIN' ? 'System Admin' : 'IT Support',
+            efficiency: existing?.efficiency || 95,
+            activeTickets: activeCount,
+            resolved3Months: resolvedCount,
+            avgResolutionHours: avgHours,
+            slaOnTimeRate: existing?.slaOnTimeRate || 98,
+            grade: existing?.grade || 'A',
+            totalCostManaged: userTickets.reduce((acc, curr) => acc + (curr.repairCost || 0), 0),
+          };
+        });
+
         setTechnicians(derivedTechs);
         saveTechnicians(derivedTechs);
       }
     }
-  }, [staffList, tickets, technicians.length]);
+  }, [staffList, tickets]);
 
   // 2. Continuous Background Database Sync (Debounced 800ms)
   useEffect(() => {
@@ -795,6 +914,7 @@ export function App() {
           onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
           dbSyncStatus={dbSyncStatus}
           onForceSyncDb={handleForceSyncDb}
+          onFetchFromDb={() => handleFetchDataFromDatabase(true)}
         />
 
         {/* 3. Main Dynamic Body */}
@@ -905,6 +1025,7 @@ export function App() {
                 onSaveRolePermissions={setRolePermissions}
                 onResetToDefault={handleResetData}
                 onOpenGoogleSheets={() => setIsGoogleSheetsSyncOpen(true)}
+                onRefreshData={() => handleFetchDataFromDatabase(true)}
               />
             )}
           </div>
@@ -1030,6 +1151,7 @@ export function App() {
         ticket={selectedTicketDetail}
         currentUser={currentUser}
         technicians={technicians}
+        staffList={staffList}
         assets={assets}
         onClose={() => setSelectedTicketDetail(null)}
         onUpdateTicket={handleUpdateTicket}
@@ -1048,6 +1170,54 @@ export function App() {
         assets={assets}
         initialAsset={newTicketInitialAsset}
       />
+
+      {/* 9. Floating Database Feedback Notification Toast */}
+      {dbToast && dbToast.show && (
+        <div
+          id="db-sync-toast"
+          className="fixed bottom-5 right-5 z-50 max-w-md animate-in fade-in slide-in-from-bottom-3 duration-200"
+        >
+          <div
+            className={`p-4 rounded-2xl shadow-2xl border backdrop-blur-md flex items-start gap-3 ${
+              dbToast.type === 'success'
+                ? 'bg-[#0f241a]/95 border-emerald-500/60 text-emerald-100 shadow-emerald-950/50'
+                : dbToast.type === 'error'
+                ? 'bg-[#291113]/95 border-rose-500/60 text-rose-100 shadow-rose-950/50'
+                : 'bg-[#101b33]/95 border-blue-500/60 text-blue-100 shadow-blue-950/50'
+            }`}
+          >
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                dbToast.type === 'success'
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : dbToast.type === 'error'
+                  ? 'bg-rose-500/20 text-rose-400'
+                  : 'bg-blue-500/20 text-blue-400'
+              }`}
+            >
+              {dbToast.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : dbToast.type === 'error' ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : (
+                <Database className="w-5 h-5" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-bold font-mono tracking-wide">{dbToast.title}</div>
+                <button
+                  onClick={() => setDbToast(null)}
+                  className="text-zinc-400 hover:text-white text-xs cursor-pointer p-0.5"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-[11px] text-zinc-300 mt-0.5 leading-relaxed">{dbToast.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

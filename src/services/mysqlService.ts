@@ -101,7 +101,26 @@ export async function syncDataToMySQL(payload: {
  */
 export async function fetchDataFromMySQL(): Promise<{
   success: boolean;
-  data?: any;
+  source?: 'mysql' | 'server_storage' | 'none';
+  counts?: {
+    assets: number;
+    transfers: number;
+    tickets: number;
+    staffList: number;
+    branches: number;
+    departments: number;
+  };
+  data?: {
+    branches?: Branch[];
+    departments?: Department[];
+    staffList?: UserProfile[];
+    assets?: Asset[];
+    transfers?: TransferForm[];
+    tickets?: ITTicket[];
+    weeklyProblems?: WeeklyProblemSummary[];
+    formConfig?: FormAdjustmentConfig;
+    rolePermissions?: SystemRolePermissions;
+  } | null;
   message?: string;
 }> {
   try {
@@ -111,7 +130,9 @@ export async function fetchDataFromMySQL(): Promise<{
   } catch (err: any) {
     return {
       success: false,
+      source: 'none',
       message: err.message,
+      data: null,
     };
   }
 }

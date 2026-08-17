@@ -65,7 +65,7 @@ interface MySQLManagerProps {
   weeklyProblems: WeeklyProblemSummary[];
   formConfig: FormAdjustmentConfig;
   rolePermissions: SystemRolePermissions;
-  onRefreshData?: () => void;
+  onRefreshData?: () => Promise<any> | void;
 }
 
 export const MySQLManager: React.FC<MySQLManagerProps> = ({
@@ -78,9 +78,11 @@ export const MySQLManager: React.FC<MySQLManagerProps> = ({
   weeklyProblems,
   formConfig,
   rolePermissions,
+  onRefreshData,
 }) => {
   const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const [copiedSql, setCopiedSql] = useState(false);
@@ -107,6 +109,22 @@ export const MySQLManager: React.FC<MySQLManagerProps> = ({
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  const handleFetchFromDB = async () => {
+    setIsFetching(true);
+    setSyncFeedback(null);
+    try {
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+      await fetchStatus();
+      setSyncFeedback('✅ ดึงข้อมูลล่าสุดจากฐานข้อมูล (Database) มาแสดงผลเรียบร้อยแล้ว');
+    } catch (err: any) {
+      setSyncFeedback(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${err.message}`);
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   // Generate Current SQL Dump
   const currentSql = generateFullSqlDump({
@@ -206,7 +224,25 @@ export const MySQLManager: React.FC<MySQLManagerProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={handleFetchFromDB}
+              disabled={isFetching}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer active:scale-95"
+              title="ดึงข้อมูลล่าสุดจาก MySQL/Database เข้ามาแสดงผลในระบบทันที"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+              <span>{isFetching ? 'กำลังดึงข้อมูล...' : 'ดึงข้อมูลจาก Database'}</span>
+            </button>
+            <button
+              onClick={handleSyncToMySQL}
+              disabled={isSyncing}
+              className="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all cursor-pointer active:scale-95"
+              title="บันทึกข้อมูลทั้งหมดปัจจุบันลงฐานข้อมูล MySQL"
+            >
+              <UploadCloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'กำลังบันทึก...' : 'ซิงค์บันทึกสู่ DB'}</span>
+            </button>
             <button
               onClick={fetchStatus}
               disabled={isLoadingStatus}
@@ -217,7 +253,7 @@ export const MySQLManager: React.FC<MySQLManagerProps> = ({
             </button>
             <button
               onClick={handleDownloadSql}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>ดาวน์โหลด xingtai_db.sql</span>

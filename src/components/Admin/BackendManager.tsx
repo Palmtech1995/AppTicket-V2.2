@@ -63,6 +63,7 @@ interface BackendManagerProps {
   onSaveRolePermissions: (perms: SystemRolePermissions) => void;
   onResetToDefault: () => void;
   onOpenGoogleSheets?: () => void;
+  onRefreshData?: () => Promise<any> | void;
 }
 
 export const BackendManager: React.FC<BackendManagerProps> = ({
@@ -82,6 +83,7 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
   onSaveRolePermissions,
   onResetToDefault,
   onOpenGoogleSheets,
+  onRefreshData,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'staff' | 'roles' | 'branches' | 'departments' | 'mysql' | 'manual' | 'sheets' | 'formAdjustment'>('staff');
 
@@ -833,6 +835,7 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
             weeklyProblems={weeklyProblems}
             formConfig={formConfig}
             rolePermissions={rolePermissions}
+            onRefreshData={onRefreshData}
           />
         )}
 

@@ -16,6 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Printer, QrCode, Download, CheckSquare, Square } from 'lucide-react';
 import { Asset } from '../../types';
 import { generateQRCodeDataUrl } from '../../utils/exportUtils';
+import { printElementDirectly } from '../../utils/printUtils';
 
 interface QRLabelPrintModalProps {
   isOpen: boolean;
@@ -71,7 +72,10 @@ export const QRLabelPrintModal: React.FC<QRLabelPrintModalProps> = ({
   };
 
   const handlePrint = () => {
-    window.print();
+    printElementDirectly('qr-labels-printable-container', {
+      orientation: 'portrait',
+      docTitle: 'Asset_QR_Labels',
+    });
   };
 
   const selectedAssets = assets.filter((a) => selectedAssetIds.includes(a.id));
@@ -124,10 +128,15 @@ export const QRLabelPrintModal: React.FC<QRLabelPrintModalProps> = ({
             <span className="text-[11px] font-mono">Layout: Standard Grid 2-Column Stickers</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {assets.map((asset) => {
-              const isSelected = selectedAssetIds.includes(asset.id);
-              const qrUrl = qrMap[asset.id];
+          <div
+            id="qr-labels-printable-container"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-white rounded-xl"
+          >
+            {assets
+              .filter((a) => selectedAssetIds.includes(a.id))
+              .map((asset) => {
+                const isSelected = selectedAssetIds.includes(asset.id);
+                const qrUrl = qrMap[asset.id];
 
               return (
                 <div

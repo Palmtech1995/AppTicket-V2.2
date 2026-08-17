@@ -783,9 +783,13 @@ async function startServer() {
   app.get('/api/db/data', async (req, res) => {
     const p = getMySQLPool();
     
-    // Attempt MySQL query first if connected
-    if (p && isDbConnected) {
+    // Attempt MySQL query if connection pool is configured
+    if (p) {
       try {
+        const connection = await p.getConnection();
+        connection.release();
+        isDbConnected = true;
+
         const [branches]: any = await p.query('SELECT * FROM branches');
         const [departments]: any = await p.query('SELECT * FROM departments');
         const [users]: any = await p.query('SELECT * FROM users');
@@ -793,21 +797,34 @@ async function startServer() {
         const [transfers]: any = await p.query('SELECT * FROM transfer_forms');
         const [tickets]: any = await p.query('SELECT * FROM it_tickets');
         const [weeklyProblems]: any = await p.query('SELECT * FROM weekly_problems');
+        const [settings]: any = await p.query('SELECT * FROM system_settings');
 
-        const formattedData = {
-          branches: branches.map((b: any) => ({
+        let formConfig = undefined;
+        let rolePermissions = undefined;
+        if (Array.isArray(settings)) {
+          for (const s of settings) {
+            if (s.setting_key === 'form_adjustment_config') {
+              formConfig = typeof s.setting_value === 'string' ? JSON.parse(s.setting_value) : s.setting_value;
+            } else if (s.setting_key === 'role_permissions') {
+              rolePermissions = typeof s.setting_value === 'string' ? JSON.parse(s.setting_value) : s.setting_value;
+            }
+          }
+        }
+
+        const formattedData: any = {
+          branches: (branches || []).map((b: any) => ({
             code: b.code,
             name: b.name,
             address: b.address,
             phone: b.phone || '',
             taxId: b.tax_id || '',
           })),
-          departments: departments.map((d: any) => ({
+          departments: (departments || []).map((d: any) => ({
             code: d.code,
             name: d.name,
             nameEn: d.name_en || '',
           })),
-          staffList: users.map((u: any) => ({
+          staffList: (users || []).map((u: any) => ({
             id: u.id,
             staffId: u.staff_id,
             username: u.username,
@@ -824,7 +841,7 @@ async function startServer() {
             branchName: u.branch_name,
             avatarUrl: u.avatar_url || '',
           })),
-          assets: assets.map((a: any) => ({
+          assets: (assets || []).map((a: any) => ({
             id: a.id,
             assetId: a.asset_id,
             itemCode: a.item_code,
@@ -848,7 +865,7 @@ async function startServer() {
             repairLogs: typeof a.repair_logs === 'string' ? JSON.parse(a.repair_logs) : a.repair_logs || [],
             custodyHistory: typeof a.custody_history === 'string' ? JSON.parse(a.custody_history) : a.custody_history || [],
           })),
-          transfers: transfers.map((t: any) => ({
+          transfers: (transfers || []).map((t: any) => ({
             id: t.id,
             formNo: t.form_no,
             createdDate: t.created_date,
@@ -878,7 +895,7 @@ async function startServer() {
             receiverSignature: t.receiver_signature || '',
             notes: t.notes || '',
           })),
-          tickets: tickets.map((tk: any) => ({
+          tickets: (tickets || []).map((tk: any) => ({
             id: tk.id,
             subject: tk.subject,
             details: tk.details,
@@ -904,7 +921,19 @@ async function startServer() {
             repairReturnedDate: tk.repair_returned_date || null,
             historyLog: typeof tk.history_log === 'string' ? JSON.parse(tk.history_log) : tk.history_log || [],
           })),
-          weeklyProblems,
+          weeklyProblems: (weeklyProblems || []).map((wp: any) => ({
+            weekNumber: wp.week_number,
+            weekLabel: wp.week_label,
+            dateRange: wp.date_range,
+            totalIncidents: wp.total_incidents,
+            topIssues: typeof wp.top_issues === 'string' ? JSON.parse(wp.top_issues) : wp.top_issues || [],
+            hardwareCount: wp.hardware_count,
+            softwareCount: wp.software_count,
+            networkCount: wp.network_count,
+            resolvedRate: Number(wp.resolved_rate),
+          })),
+          formConfig,
+          rolePermissions,
         };
 
         // Cache into server database
@@ -913,6 +942,15 @@ async function startServer() {
         return res.json({
           success: true,
           source: 'mysql',
+          message: 'ดึงข้อมูลสดจากฐานข้อมูล MySQL สำเร็จ',
+          counts: {
+            assets: formattedData.assets.length,
+            transfers: formattedData.transfers.length,
+            tickets: formattedData.tickets.length,
+            staffList: formattedData.staffList.length,
+            branches: formattedData.branches.length,
+            departments: formattedData.departments.length,
+          },
           data: formattedData,
         });
       } catch (err: any) {
@@ -926,6 +964,15 @@ async function startServer() {
       return res.json({
         success: true,
         source: 'server_storage',
+        message: 'ดึงข้อมูลจาก Server Storage Database สำเร็จ',
+        counts: {
+          assets: serverData.assets?.length || 0,
+          transfers: serverData.transfers?.length || 0,
+          tickets: serverData.tickets?.length || 0,
+          staffList: serverData.staffList?.length || 0,
+          branches: serverData.branches?.length || 0,
+          departments: serverData.departments?.length || 0,
+        },
         data: serverData,
       });
     }
@@ -934,6 +981,7 @@ async function startServer() {
     res.json({
       success: true,
       source: 'none',
+      message: 'ยังไม่มีข้อมูลบันทึกในฐานข้อมูล',
       data: null,
     });
   });

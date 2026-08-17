@@ -35,6 +35,7 @@ interface TicketDetailModalProps {
   ticket: ITTicket | null;
   currentUser: UserProfile;
   technicians: TechnicianMetric[];
+  staffList?: UserProfile[];
   assets: Asset[];
   onClose: () => void;
   onUpdateTicket: (updatedTicket: ITTicket) => void;
@@ -45,6 +46,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   ticket,
   currentUser,
   technicians,
+  staffList = [],
   assets,
   onClose,
   onUpdateTicket,
@@ -54,9 +56,27 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   const isITOrAdmin = currentUser.role === 'IT' || currentUser.role === 'ADMIN';
 
+  // Extract IT users and ADMIN users from Database (staffList)
+  const itUsersFromDb = staffList.filter((s) => s.role === 'IT');
+  const adminUsersFromDb = staffList.filter((s) => s.role === 'ADMIN');
+
+  // Match initial assigned technician ID
+  const getInitialAssignedTech = () => {
+    if (ticket.assignedToTechnician) return ticket.assignedToTechnician;
+    if (ticket.assignedTechnicianName) {
+      const match = staffList.find(
+        (s) => s.thaiName === ticket.assignedTechnicianName || s.name === ticket.assignedTechnicianName
+      );
+      if (match) return match.id;
+      const techMatch = technicians.find((t) => t.name === ticket.assignedTechnicianName);
+      if (techMatch) return techMatch.id;
+    }
+    return '';
+  };
+
   const [status, setStatus] = useState(ticket.status);
   const [priority, setPriority] = useState(ticket.priority);
-  const [assignedTechnician, setAssignedTechnician] = useState(ticket.assignedToTechnician || '');
+  const [assignedTechnician, setAssignedTechnician] = useState(getInitialAssignedTech);
   const [resolutionHours, setResolutionHours] = useState(ticket.resolutionHours || 0);
   const [resolutionNote, setResolutionNote] = useState(ticket.resolutionNote || '');
   const [repairCost, setRepairCost] = useState(ticket.repairCost || 0);
@@ -71,13 +91,29 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const techObj = technicians.find((t) => t.id === assignedTechnician);
+    // Match assigned technician from staffList (Database users with role IT / ADMIN) or technicians
+    const matchedStaff = staffList.find(
+      (s) => s.id === assignedTechnician || s.staffId === assignedTechnician || `tech-${s.id}` === assignedTechnician
+    );
+    const techObj = technicians.find((t) => t.id === assignedTechnician || t.staffId === assignedTechnician);
+
+    const resolvedTechName = matchedStaff
+      ? (matchedStaff.thaiName || matchedStaff.name)
+      : techObj
+      ? techObj.name
+      : assignedTechnician ? assignedTechnician : undefined;
+
+    const resolvedTechId = matchedStaff
+      ? matchedStaff.id
+      : techObj
+      ? techObj.id
+      : assignedTechnician || undefined;
 
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
 
     const historyEntry = {
       timestamp: nowStr,
-      action: `Status: ${status} | Assigned: ${techObj?.name || 'Unassigned'} | Notes: ${resolutionNote || 'Updated by ' + currentUser.name}`,
+      action: `Status: ${status} | Assigned: ${resolvedTechName || 'Unassigned'} | Notes: ${resolutionNote || 'Updated by ' + currentUser.name}`,
       byUser: currentUser.thaiName || currentUser.name,
     };
 
@@ -85,8 +121,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
       ...ticket,
       status,
       priority,
-      assignedToTechnician: assignedTechnician || undefined,
-      assignedTechnicianName: techObj ? techObj.name : undefined,
+      assignedToTechnician: resolvedTechId,
+      assignedTechnicianName: resolvedTechName,
       resolutionHours: Number(resolutionHours) || undefined,
       resolutionNote: resolutionNote || undefined,
       resolvedAt: status === 'RESOLVED' ? (ticket.resolvedAt || nowStr) : undefined,
@@ -296,19 +332,52 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
               {/* Assign Technician */}
               <div>
-                <label className="text-zinc-400 block mb-1">มอบหมายช่างผู้รับผิดชอบ (Assign Tech)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-zinc-300 font-semibold block">มอบหมายช่างผู้รับผิดชอบ (Assign Tech)</label>
+                  <span className="text-[10px] text-cyan-400 font-medium">
+                    (ดึงข้อมูล User Role: IT จาก Database)
+                  </span>
+                </div>
                 <select
                   disabled={!isITOrAdmin}
                   value={assignedTechnician}
                   onChange={(e) => setAssignedTechnician(e.target.value)}
-                  className="w-full bg-[#11131a] border border-zinc-700 rounded-lg p-2 text-cyan-300 font-semibold disabled:opacity-60"
+                  className="w-full bg-[#11131a] border border-cyan-700/60 focus:border-cyan-400 rounded-lg p-2.5 text-cyan-300 font-semibold disabled:opacity-60 text-xs shadow-inner"
                 >
-                  <option value="">-- ยังไม่ได้มอบหมาย --</option>
-                  {technicians.map((tech) => (
-                    <option key={tech.id} value={tech.id}>
-                      {tech.name} ({tech.shortCode}) - Eff: {tech.efficiency}%
-                    </option>
-                  ))}
+                  <option value="">-- ยังไม่ได้มอบหมายช่าง (Unassigned) --</option>
+
+                  {/* IT Staff from Database */}
+                  {itUsersFromDb.length > 0 && (
+                    <optgroup label="🛠️ เจ้าหน้าที่ IT (Database Role: IT)">
+                      {itUsersFromDb.map((staff) => (
+                        <option key={staff.id} value={staff.id}>
+                          {staff.thaiName || staff.name} ({staff.staffId}) - {staff.departmentName || staff.departmentCode || 'IT'} [{staff.branchName || staff.branchCode || 'HQ'}]
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  {/* Admin Users from Database */}
+                  {adminUsersFromDb.length > 0 && (
+                    <optgroup label="🛡️ ผู้ดูแลระบบ IT (Database Role: ADMIN)">
+                      {adminUsersFromDb.map((staff) => (
+                        <option key={staff.id} value={staff.id}>
+                          {staff.thaiName || staff.name} ({staff.staffId}) - System Admin [{staff.branchName || staff.branchCode || 'HQ'}]
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  {/* Fallback to technicians if not duplicate */}
+                  {technicians.length > 0 && itUsersFromDb.length === 0 && adminUsersFromDb.length === 0 && (
+                    <optgroup label="รายชื่อช่างเทคนิคในระบบ">
+                      {technicians.map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.name} ({tech.shortCode}) - Eff: {tech.efficiency}%
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 

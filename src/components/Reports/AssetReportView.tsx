@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Asset, Branch, Department } from '../../types';
 import { exportAssetsToExcel } from '../../utils/exportUtils';
+import { ReportA4PrintModal } from './ReportA4PrintModal';
 
 interface AssetReportViewProps {
   assets: Asset[];
@@ -56,6 +57,9 @@ export const AssetReportView: React.FC<AssetReportViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Dedicated A4 Print Modal
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   // Handle Preset change
   const handlePresetChange = (preset: typeof datePreset) => {
@@ -199,11 +203,11 @@ export const AssetReportView: React.FC<AssetReportViewProps> = ({
             </button>
 
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-[#1b1e27] hover:bg-[#252a38] text-zinc-200 border border-zinc-700 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm"
+              onClick={() => setIsPrintModalOpen(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-950/50 active:scale-95 cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-zinc-400" />
-              <span>พิมพ์รายงาน (Print)</span>
+              <Printer className="w-4 h-4 text-cyan-200" />
+              <span>พิมพ์รายงาน A4 (Print Report)</span>
             </button>
           </div>
         </div>
@@ -564,6 +568,20 @@ export const AssetReportView: React.FC<AssetReportViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Dedicated A4 Report Modal & Print Engine */}
+      <ReportA4PrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        initialReportType="ASSET_INVENTORY"
+        assets={filteredAssets}
+        branches={branches}
+        departments={departments}
+        filterStartDate={startDate}
+        filterEndDate={endDate}
+        filterBranch={selectedBranch}
+        filterDepartment={selectedDept}
+      />
     </div>
   );
 };
