@@ -38,6 +38,10 @@ import {
   X,
   Check,
   BookOpen,
+  Edit2,
+  Search,
+  KeyRound,
+  Filter,
 } from 'lucide-react';
 import { Branch, Department, FormAdjustmentConfig, SystemRolePermissions, UserProfile, UserRole, Asset, TransferForm, ITTicket, WeeklyProblemSummary } from '../../types';
 import { COMPANY_INFO } from '../../data/initialData';
@@ -45,6 +49,7 @@ import { FormAdjustmentEditor } from './FormAdjustmentEditor';
 import { RolePermissionManager } from './RolePermissionManager';
 import { MySQLManager } from './MySQLManager';
 import { SystemManual } from './SystemManual';
+import { UserEditModal } from './UserEditModal';
 
 interface BackendManagerProps {
   branches: Branch[];
@@ -139,6 +144,44 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
     setNewStaffName('');
     setNewStaffThai('');
     setNewStaffId('');
+  };
+
+  // User Edit Modal & Filter State
+  const [editingStaff, setEditingStaff] = useState<UserProfile | null>(null);
+  const [isEditStaffModalOpen, setIsEditStaffModalOpen] = useState(false);
+  const [staffSearch, setStaffSearch] = useState('');
+  const [staffRoleFilter, setStaffRoleFilter] = useState<string>('ALL');
+  const [staffDeptFilter, setStaffDeptFilter] = useState<string>('ALL');
+  const [staffBranchFilter, setStaffBranchFilter] = useState<string>('ALL');
+
+  // Edit Staff Handler
+  const handleEditStaff = (staff: UserProfile) => {
+    setEditingStaff(staff);
+    setIsEditStaffModalOpen(true);
+  };
+
+  const handleSaveEditedStaff = (updatedStaff: UserProfile) => {
+    const updatedList = staffList.map((s) => (s.id === updatedStaff.id ? updatedStaff : s));
+    onSaveStaff(updatedList);
+    setIsEditStaffModalOpen(false);
+    setEditingStaff(null);
+  };
+
+  const handleQuickResetPassword = (staff: UserProfile) => {
+    if (
+      confirm(
+        `คุณต้องการรีเซ็ตรหัสผ่านของ ${staff.thaiName || staff.name} (${staff.staffId}) เป็นรหัสเริ่มต้น 'Lemony2026' และบังคับเปลี่ยนรหัสผ่านเมื่อล็อกอินครั้งถัดไปหรือไม่?`
+      )
+    ) {
+      const updated: UserProfile = {
+        ...staff,
+        password: 'Lemony2026',
+        isFirstLogin: true,
+      };
+      const updatedList = staffList.map((s) => (s.id === staff.id ? updated : s));
+      onSaveStaff(updatedList);
+      alert(`รีเซ็ตรหัสผ่านของ ${staff.staffId} (${staff.name}) เรียบร้อยแล้ว`);
+    }
   };
 
   // Delete Staff
@@ -495,8 +538,92 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
               </form>
             )}
 
+            {/* Search and Filters for Staff */}
+            <div className="bg-[#151722] p-3 rounded-xl border border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาชื่อ, รหัสพนักงาน, username, อีเมล..."
+                    value={staffSearch}
+                    onChange={(e) => setStaffSearch(e.target.value)}
+                    className="w-full bg-[#0e1017] border border-zinc-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-400"
+                  />
+                  {staffSearch && (
+                    <button
+                      onClick={() => setStaffSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-zinc-500" />
+                  <select
+                    value={staffRoleFilter}
+                    onChange={(e) => setStaffRoleFilter(e.target.value)}
+                    className="bg-[#0e1017] border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="ALL">ทุก Role สิทธิ์</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="IT">IT</option>
+                    <option value="MANAGER">MANAGER</option>
+                    <option value="ACC">ACC</option>
+                    <option value="USER">USER</option>
+                  </select>
+                </div>
+
+                <select
+                  value={staffDeptFilter}
+                  onChange={(e) => setStaffDeptFilter(e.target.value)}
+                  className="bg-[#0e1017] border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-400 max-w-[150px] truncate"
+                >
+                  <option value="ALL">ทุกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.code} ({d.name})
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={staffBranchFilter}
+                  onChange={(e) => setStaffBranchFilter(e.target.value)}
+                  className="bg-[#0e1017] border border-zinc-700/80 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-cyan-400 max-w-[130px] truncate"
+                >
+                  <option value="ALL">ทุกสาขา</option>
+                  {branches.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.code} ({b.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="text-[11px] text-zinc-400 font-mono">
+                แสดง {
+                  staffList.filter((s) => {
+                    const matchSearch =
+                      !staffSearch.trim() ||
+                      s.staffId.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                      (s.name && s.name.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                      (s.thaiName && s.thaiName.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                      (s.email && s.email.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                      (s.username && s.username.toLowerCase().includes(staffSearch.toLowerCase()));
+                    const matchRole = staffRoleFilter === 'ALL' || s.role === staffRoleFilter;
+                    const matchDept = staffDeptFilter === 'ALL' || s.departmentCode === staffDeptFilter;
+                    const matchBranch = staffBranchFilter === 'ALL' || s.branchCode === staffBranchFilter;
+                    return matchSearch && matchRole && matchDept && matchBranch;
+                  }).length
+                } จาก {staffList.length} คน
+              </div>
+            </div>
+
             {/* Staff list table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-zinc-800">
               <table className="w-full text-left text-xs text-zinc-300">
                 <thead>
                   <tr className="bg-[#0f1116] border-b border-zinc-800 text-[10px] font-mono text-zinc-400 uppercase">
@@ -506,52 +633,120 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
                     <th className="py-3 px-3">BRANCH</th>
                     <th className="py-3 px-3">ROLE PERMISSION</th>
                     <th className="py-3 px-3 text-center">PASSWORD STATUS</th>
-                    <th className="py-3 px-3 text-right">ACTION</th>
+                    <th className="py-3 px-3 text-right">ACTION (แก้ไข/จัดการ)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/60">
-                  {staffList.map((s) => (
-                    <tr key={s.id} className="hover:bg-[#161822]">
-                      <td className="py-3 px-3 font-mono font-bold text-cyan-400">{s.staffId}</td>
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-white">{s.thaiName || s.name}</div>
-                        <div className="text-[11px] text-zinc-400">{s.name} ({s.email})</div>
-                      </td>
-                      <td className="py-3 px-3">{s.departmentName || s.departmentCode}</td>
-                      <td className="py-3 px-3 text-zinc-400">{s.branchName || s.branchCode}</td>
-                      <td className="py-3 px-3">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold ${
-                          s.role === 'ADMIN' ? 'bg-red-950 text-red-400 border border-red-800' :
-                          s.role === 'IT' ? 'bg-cyan-950 text-cyan-400 border border-cyan-800' :
-                          s.role === 'ACC' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
-                          s.role === 'MANAGER' ? 'bg-amber-950 text-amber-400 border border-amber-800' :
-                          'bg-zinc-800 text-zinc-300'
-                        }`}>
-                          {s.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
-                          s.isFirstLogin === false
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-amber-950 text-amber-400 border border-amber-800'
-                        }`}>
-                          {s.isFirstLogin === false ? 'Custom PW Set' : 'Default Lemony2026'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        {s.id !== 'u-admin' && (
-                          <button
-                            onClick={() => handleDeleteStaff(s.id)}
-                            className="p-1.5 text-zinc-500 hover:text-red-400 rounded"
-                            title="ลบพนักงาน"
+                <tbody className="divide-y divide-zinc-800/60 bg-[#10121a]">
+                  {staffList
+                    .filter((s) => {
+                      const matchSearch =
+                        !staffSearch.trim() ||
+                        s.staffId.toLowerCase().includes(staffSearch.toLowerCase()) ||
+                        (s.name && s.name.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                        (s.thaiName && s.thaiName.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                        (s.email && s.email.toLowerCase().includes(staffSearch.toLowerCase())) ||
+                        (s.username && s.username.toLowerCase().includes(staffSearch.toLowerCase()));
+                      const matchRole = staffRoleFilter === 'ALL' || s.role === staffRoleFilter;
+                      const matchDept = staffDeptFilter === 'ALL' || s.departmentCode === staffDeptFilter;
+                      const matchBranch = staffBranchFilter === 'ALL' || s.branchCode === staffBranchFilter;
+                      return matchSearch && matchRole && matchDept && matchBranch;
+                    })
+                    .map((s) => (
+                      <tr key={s.id} className="hover:bg-[#161824] transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-cyan-400">
+                          <div>{s.staffId}</div>
+                          {s.username && s.username !== s.staffId && (
+                            <div className="text-[10px] text-zinc-500 font-normal">@{s.username}</div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-white flex items-center gap-1.5">
+                            <span>{s.thaiName || s.name}</span>
+                            {s.nickname && (
+                              <span className="text-[10px] text-cyan-300 font-normal px-1.5 py-0.5 bg-cyan-950/70 border border-cyan-800/60 rounded">
+                                ({s.nickname})
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-zinc-400">
+                            {s.name} • <span className="font-mono text-[10px]">{s.email}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-medium text-zinc-200">{s.departmentName || s.departmentCode}</span>
+                          <div className="text-[10px] font-mono text-zinc-500">{s.departmentCode}</div>
+                        </td>
+                        <td className="py-3 px-3 text-zinc-400">
+                          <div className="text-zinc-200">{s.branchName || s.branchCode}</div>
+                          <div className="text-[10px] font-mono text-zinc-500">{s.branchCode}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold ${
+                              s.role === 'ADMIN'
+                                ? 'bg-red-950 text-red-400 border border-red-800'
+                                : s.role === 'IT'
+                                ? 'bg-cyan-950 text-cyan-400 border border-cyan-800'
+                                : s.role === 'ACC'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : s.role === 'MANAGER'
+                                ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                                : 'bg-zinc-800 text-zinc-300'
+                            }`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {s.role}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${
+                              s.isFirstLogin === false
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : 'bg-amber-950 text-amber-400 border border-amber-800'
+                            }`}
+                          >
+                            {s.isFirstLogin === false ? 'Custom PW Set' : 'Default Lemony2026'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => handleEditStaff(s)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-700/80 rounded-lg text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+                              title="แก้ไขข้อมูลผู้ใช้งาน (Edit User Profile)"
+                            >
+                              <Edit2 className="w-3 h-3 text-cyan-400" />
+                              <span>แก้ไข</span>
+                            </button>
+
+                            {/* Reset Password Button */}
+                            <button
+                              onClick={() => handleQuickResetPassword(s)}
+                              className="p-1.5 text-zinc-400 hover:text-amber-300 hover:bg-amber-950/40 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-amber-800/60"
+                              title="รีเซ็ตรหัสผ่านกลับเป็น Lemony2026 และบังคับเปลี่ยนรหัสผ่าน"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Delete Button */}
+                            {s.id !== 'u-admin' ? (
+                              <button
+                                onClick={() => handleDeleteStaff(s.id)}
+                                className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-red-800/60"
+                                title="ลบพนักงานออกจากระบบ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <span className="p-1.5 text-zinc-600 cursor-not-allowed" title="บัญชี Admin หลักไม่สามารถลบได้">
+                                <Lock className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -929,6 +1124,19 @@ export const BackendManager: React.FC<BackendManagerProps> = ({
           />
         )}
       </div>
+
+      {/* User Edit Modal */}
+      <UserEditModal
+        isOpen={isEditStaffModalOpen}
+        user={editingStaff}
+        branches={branches}
+        departments={departments}
+        onClose={() => {
+          setIsEditStaffModalOpen(false);
+          setEditingStaff(null);
+        }}
+        onSave={handleSaveEditedStaff}
+      />
     </div>
   );
 };

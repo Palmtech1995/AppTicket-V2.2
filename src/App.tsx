@@ -48,6 +48,7 @@ import { LoginScreen } from './components/Auth/LoginScreen';
 import { ForceChangePasswordModal } from './components/Auth/ForceChangePasswordModal';
 import { ChangePasswordModal } from './components/Auth/ChangePasswordModal';
 import { GoogleSheetsSyncModal } from './components/Common/GoogleSheetsSyncModal';
+import { UserEditModal } from './components/Admin/UserEditModal';
 
 import {
   Asset,
@@ -149,6 +150,9 @@ export function App() {
 
   // Google Sheets Sync Modal state
   const [isGoogleSheetsSyncOpen, setIsGoogleSheetsSyncOpen] = useState(false);
+
+  // User Profile Quick Edit Modal state
+  const [isCurrentUserEditOpen, setIsCurrentUserEditOpen] = useState(false);
 
   // Database Notification Toast state
   const [dbToast, setDbToast] = useState<{
@@ -909,6 +913,7 @@ export function App() {
           onSearchGlobal={setGlobalSearch}
           searchQuery={globalSearch}
           onOpenChangePassword={() => setShowChangePwModal(true)}
+          onOpenEditProfile={() => setIsCurrentUserEditOpen(true)}
           onOpenGoogleSheetsSync={() => setIsGoogleSheetsSyncOpen(true)}
           onLogout={handleLogout}
           onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -1170,6 +1175,23 @@ export function App() {
         assets={assets}
         initialAsset={newTicketInitialAsset}
       />
+
+      {/* 9. Current User Profile Edit Modal */}
+      {currentUser && (
+        <UserEditModal
+          isOpen={isCurrentUserEditOpen}
+          user={currentUser}
+          branches={branches}
+          departments={departments}
+          onClose={() => setIsCurrentUserEditOpen(false)}
+          onSave={(updatedUser) => {
+            const updated = staffList.map((s) => (s.id === updatedUser.id ? updatedUser : s));
+            setStaffList(updated);
+            saveStaff(updated);
+            setIsCurrentUserEditOpen(false);
+          }}
+        />
+      )}
 
       {/* 9. Floating Database Feedback Notification Toast */}
       {dbToast && dbToast.show && (

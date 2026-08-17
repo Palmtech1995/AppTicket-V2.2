@@ -43,6 +43,7 @@ interface NavbarProps {
   onSearchGlobal: (query: string) => void;
   searchQuery: string;
   onOpenChangePassword?: () => void;
+  onOpenEditProfile?: () => void;
   onOpenGoogleSheetsSync?: () => void;
   onLogout?: () => void;
   onToggleMobileMenu?: () => void;
@@ -65,6 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchGlobal,
   searchQuery,
   onOpenChangePassword,
+  onOpenEditProfile,
   onOpenGoogleSheetsSync,
   onLogout,
   onToggleMobileMenu,
@@ -234,13 +236,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>{badge.label}</span>
         </div>
 
-        {/* Profile Avatar */}
-        <div className="flex items-center gap-2 pl-0.5 sm:pl-1">
+        {/* Profile Avatar & Quick Edit Trigger */}
+        <div
+          onClick={onOpenEditProfile}
+          className={`flex items-center gap-2 pl-0.5 sm:pl-1 ${
+            onOpenEditProfile ? 'cursor-pointer hover:opacity-85 transition-opacity' : ''
+          }`}
+          title={onOpenEditProfile ? 'คลิกเพื่อแก้ไขข้อมูลโปรไฟล์ผู้ใช้งาน (Edit Profile)' : undefined}
+        >
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-cyan-800 to-blue-600 flex items-center justify-center text-xs font-bold text-white uppercase shadow-inner border border-cyan-500/40 shrink-0">
             {currentUser.name.charAt(0)}
           </div>
           <div className="hidden md:block text-left text-xs">
-            <div className="font-medium text-zinc-200 leading-tight max-w-[100px] truncate">{currentUser.thaiName || currentUser.name}</div>
+            <div className="font-medium text-zinc-200 leading-tight max-w-[100px] truncate">
+              {currentUser.thaiName || currentUser.name}
+            </div>
             <div className="text-zinc-500 font-mono text-[10px]">{currentUser.staffId}</div>
           </div>
         </div>
